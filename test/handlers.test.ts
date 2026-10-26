@@ -17,7 +17,7 @@ const phpRce = (n: number, over: Partial<Item> = {}): Item => ({
   url: `https://nvd/${n}`,
   publishedAt: '2026-10-26T00:00:00Z',
   snippet: '',
-  ecosystem: 'php-core',
+  ecosystem: 'core', stackHint: 'php',
   cvss: 9.8,
   ...over,
 });
@@ -136,7 +136,7 @@ describe('runPoll', () => {
       publishedAt: '2026-10-26T00:00:00Z',
       snippet: '',
       feedKind: 'dev-news',
-      feedStack: 'js',
+      stackHint: 'js',
     };
     let calls = 0;
     const { d, store } = deps([promo], {

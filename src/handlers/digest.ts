@@ -14,6 +14,8 @@ export async function runDigest(deps: DigestDeps) {
   const payload = formatDigest(
     pending.map((e) => e.item),
     date,
+    undefined,
+    deps.now,
   );
   if (!payload) {
     console.log('digest: nothing pending');

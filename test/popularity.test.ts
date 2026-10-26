@@ -34,6 +34,13 @@ describe('addDownloads', () => {
     expect(out[0]?.downloads).toBeUndefined();
   });
 
+  it('passes the ecosystem to the lookup so pip packages hit PyPI stats', async () => {
+    const seen: string[] = [];
+    const py: Item = { ...item('p', []), ecosystem: 'pip', packages: [{ name: 'django', ecosystem: 'pip' }] };
+    await addDownloads([py], async (name, eco) => (seen.push(`${eco}:${name}`), 1));
+    expect(seen).toEqual(['pip:django']);
+  });
+
   it('skips items without packages', async () => {
     const news: Item = { ...item('n', []), kind: 'news', packages: undefined };
     const out = await addDownloads([news], async () => 1);

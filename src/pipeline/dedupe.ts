@@ -12,6 +12,7 @@ function merge(group: Item[]): Item {
     if (other.kev) merged.kev = true;
     if (other.cvss !== undefined && (merged.cvss === undefined || other.cvss > merged.cvss)) merged.cvss = other.cvss;
     merged.ecosystem ??= other.ecosystem;
+    merged.stackHint ??= other.stackHint;
     if (!merged.packages?.length && other.packages?.length) merged.packages = other.packages;
     if (other.cwes?.length) merged.cwes = [...new Set([...(merged.cwes ?? []), ...other.cwes])];
     if (!merged.snippet) merged.snippet = other.snippet;

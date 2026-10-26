@@ -76,12 +76,13 @@ describe('ghsaForKev', () => {
 
 describe('parseNvd', () => {
   it('normalizes CVEs with the highest available CVSS score', () => {
-    const items = parseNvd(json('nvd-php.json'), 'php-core');
+    const items = parseNvd(json('nvd-php.json'), { stack: 'php', label: 'PHP' });
     const cve = items.find((i) => i.id === 'CVE-2024-5585');
     expect(cve).toMatchObject({
       kind: 'vuln',
       source: 'NVD',
-      ecosystem: 'php-core',
+      ecosystem: 'core',
+      stackHint: 'php',
       cvss: 8.8,
       url: 'https://nvd.nist.gov/vuln/detail/CVE-2024-5585',
     });
@@ -118,7 +119,7 @@ describe('parseFeed', () => {
       kind: 'news',
       source: 'PHP.net',
       feedKind: 'release',
-      feedStack: 'php',
+      stackHint: 'php',
       title: 'Security advisory: Critical remote code execution vulnerabilities, update now',
       url: 'https://www.php.net/index.php#2026-10-21-5',
       publishedAt: '2026-10-21T00:35:26.000Z',

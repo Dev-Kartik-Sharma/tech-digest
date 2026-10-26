@@ -29,12 +29,12 @@ const news = (over: Partial<Item>): Item => ({
 
 describe('scoreItem: vulnerabilities', () => {
   it('rates a CVSS 9.8 PHP core RCE as critical vuln-php', () => {
-    const s = scoreItem(vuln({ ecosystem: 'php-core', cvss: 9.8, title: 'PHP CGI remote code execution' }));
+    const s = scoreItem(vuln({ ecosystem: 'core', stackHint: 'php', cvss: 9.8, title: 'PHP CGI remote code execution' }));
     expect(s).toMatchObject({ priority: 'critical', category: 'vuln-php' });
   });
 
   it('rates a Node.js core RCE as critical even below CVSS 9', () => {
-    const s = scoreItem(vuln({ ecosystem: 'node-core', cvss: 8.1, snippet: 'allows remote code execution' }));
+    const s = scoreItem(vuln({ ecosystem: 'core', stackHint: 'js', cvss: 8.1, snippet: 'allows remote code execution' }));
     expect(s).toMatchObject({ priority: 'critical', category: 'vuln-js' });
   });
 
@@ -81,6 +81,27 @@ describe('scoreItem: vulnerabilities', () => {
     expect(s).toMatchObject({ priority: 'high', category: 'exploited-in-wild' });
   });
 
+  it('rates a CVSS 9.8 in a popular pip package as critical vuln-python', () => {
+    const s = scoreItem(
+      vuln({ ecosystem: 'pip', cvss: 9.8, downloads: 500_000, packages: [{ name: 'some-py', ecosystem: 'pip' }] }),
+    );
+    expect(s).toMatchObject({ priority: 'critical', category: 'vuln-python' });
+  });
+
+  it('rates core products by their tech area', () => {
+    const core = (stackHint: Item['stackHint'], cvss: number) => scoreItem(vuln({ ecosystem: 'core', stackHint, cvss }));
+    expect(core('web-server', 9.8)).toMatchObject({ priority: 'critical', category: 'vuln-web-server' });
+    expect(core('devops', 9.6)).toMatchObject({ priority: 'critical', category: 'vuln-devops' });
+    expect(core('database', 7.5)).toMatchObject({ priority: 'high', category: 'vuln-database' });
+    expect(core('python', 5.0)).toMatchObject({ priority: 'medium', category: 'vuln-python' });
+  });
+
+  it('recognises nginx, MongoDB and GitLab in KEV titles', () => {
+    expect(scoreItem(vuln({ kev: true, title: 'F5 NGINX Plus Buffer Overflow Vulnerability' }))).toMatchObject({ priority: 'critical', category: 'vuln-web-server' });
+    expect(scoreItem(vuln({ kev: true, title: 'MongoDB Server Use-After-Free Vulnerability' }))).toMatchObject({ priority: 'critical', category: 'vuln-database' });
+    expect(scoreItem(vuln({ kev: true, title: 'GitLab Improper Access Control Vulnerability' }))).toMatchObject({ priority: 'critical', category: 'vuln-devops' });
+  });
+
   it('drops an out-of-stack vulnerability that is not on KEV', () => {
     expect(scoreItem(vuln({ cvss: 9.8, title: 'Apache Struts OGNL injection' }))).toBeNull();
   });
@@ -110,14 +131,31 @@ describe('scoreItem: news', () => {
 
   it('rates a Node.js security release as high vuln-js', () => {
     const s = scoreItem(
-      news({ feedKind: 'release', feedStack: 'js', title: 'Tuesday, October 21, 2026 Security Releases' }),
+      news({ feedKind: 'release', stackHint: 'js', title: 'Tuesday, October 21, 2026 Security Releases' }),
     );
     expect(s).toMatchObject({ priority: 'high', category: 'vuln-js' });
   });
 
   it('rates a normal PHP release as low release-update', () => {
-    const s = scoreItem(news({ feedKind: 'release', feedStack: 'php', title: 'PHP 8.5.3 Released!' }));
+    const s = scoreItem(news({ feedKind: 'release', stackHint: 'php', title: 'PHP 8.5.3 Released!' }));
     expect(s).toMatchObject({ priority: 'low', category: 'release-update' });
+  });
+
+  it('detects the newer tech areas in news', () => {
+    const area = (title: string) => scoreItem(news({ title: `${title} remote code execution flaw patched` }))?.category;
+    expect(area('NestJS')).toBe('vuln-js');
+    expect(area('Angular')).toBe('vuln-js');
+    expect(area('Django')).toBe('vuln-python');
+    expect(area('PostgreSQL')).toBe('vuln-database');
+    expect(area('MySQL')).toBe('vuln-database');
+    expect(area('Nginx')).toBe('vuln-web-server');
+    expect(area('GitHub Actions')).toBe('vuln-devops');
+    expect(area('AWS Lambda')).toBe('vuln-cloud');
+  });
+
+  it('rates a cloud provider security bulletin as high', () => {
+    const s = scoreItem(news({ feedKind: 'release', stackHint: 'cloud', title: 'Issue in the Linux kernel affecting EC2 instances', snippet: 'AWS is aware of a security issue (CVE-2026-1234)' }));
+    expect(s).toMatchObject({ priority: 'high', category: 'vuln-cloud' });
   });
 
   it('rates general tech news as low tech-news', () => {

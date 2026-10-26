@@ -52,11 +52,14 @@ function packages(a: GhsaAdvisory, ecosystem: Ecosystem): AffectedPackage[] {
   return [...byName.values()];
 }
 
+const registryEcosystem = (e: string | undefined): Ecosystem =>
+  (GHSA_ECOSYSTEMS as readonly string[]).includes(e ?? '') ? (e as Ecosystem) : 'npm';
+
 export function parseGhsa(advisories: GhsaAdvisory[]): Item[] {
   return advisories
     .filter((a) => !a.withdrawn_at)
     .map((a): Item => {
-      const ecosystem: Ecosystem = a.vulnerabilities?.[0]?.package?.ecosystem === 'composer' ? 'composer' : 'npm';
+      const ecosystem = registryEcosystem(a.vulnerabilities?.[0]?.package?.ecosystem);
       const cvss = bestScore(a);
       return {
         id: a.cve_id ?? a.ghsa_id,

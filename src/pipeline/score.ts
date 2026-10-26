@@ -1,27 +1,19 @@
 import { MAJOR_PACKAGES, POPULARITY, SIGNALS, STACK_KEYWORDS } from '../config/sources.js';
-import type { Category, Ecosystem, Item, Priority, ScoredItem, Stack } from '../types.js';
+import { STACKS, type Category, type Ecosystem, type Item, type Priority, type ScoredItem, type Stack } from '../types.js';
 
-const ECOSYSTEM_STACK: Record<Ecosystem, Stack> = {
-  'npm': 'js',
-  'composer': 'php',
-  'php-core': 'php',
-  'node-core': 'js',
-  'mongodb': 'js',
-};
-
-const CORE: Ecosystem[] = ['php-core', 'node-core', 'mongodb'];
+const REGISTRY_STACK: Record<Exclude<Ecosystem, 'core'>, Stack> = { npm: 'js', composer: 'php', pip: 'python' };
 
 const text = (item: Item) => `${item.title}\n${item.snippet}`;
 
 export function detectStack(item: Item): Stack | undefined {
-  if (item.ecosystem) return ECOSYSTEM_STACK[item.ecosystem];
-  if (item.feedStack) return item.feedStack;
+  if (item.ecosystem && item.ecosystem !== 'core') return REGISTRY_STACK[item.ecosystem];
+  if (item.stackHint) return item.stackHint;
   const t = text(item);
-  // php first: "PHP" headlines often also mention JavaScript, rarely the other way round
-  if (STACK_KEYWORDS.php.some((re) => re.test(t))) return 'php';
-  if (STACK_KEYWORDS.js.some((re) => re.test(t))) return 'js';
-  return undefined;
+  // STACKS order decides ties: specific stacks before broad ones like "GitHub" or "AWS"
+  return STACKS.find((stack) => STACK_KEYWORDS[stack].some((re) => re.test(t)));
 }
+
+const registry = (item: Item) => (item.ecosystem && item.ecosystem !== 'core' ? item.ecosystem : undefined);
 
 const isRce = (item: Item) =>
   SIGNALS.rce.test(text(item)) || (item.cwes ?? []).some((c) => SIGNALS.rceCwes.includes(c));
@@ -29,14 +21,14 @@ const isRce = (item: Item) =>
 /** true / false when we can tell, undefined when popularity is unknown. */
 function isPopular(item: Item): boolean | undefined {
   if (item.packages?.some((p) => MAJOR_PACKAGES.has(p.name))) return true;
-  if (item.downloads === undefined) return undefined;
-  const eco = item.ecosystem === 'composer' ? 'composer' : 'npm';
+  const eco = registry(item);
+  if (item.downloads === undefined || !eco) return undefined;
   return item.downloads >= POPULARITY.popular[eco];
 }
 
 function belowFloor(item: Item): boolean {
-  if (item.downloads === undefined || item.packages?.some((p) => MAJOR_PACKAGES.has(p.name))) return false;
-  const eco = item.ecosystem === 'composer' ? 'composer' : 'npm';
+  const eco = registry(item);
+  if (item.downloads === undefined || !eco || item.packages?.some((p) => MAJOR_PACKAGES.has(p.name))) return false;
   return item.downloads < POPULARITY.floor[eco];
 }
 
@@ -47,9 +39,9 @@ function scoreVuln(item: Item): ScoredItem | null {
   }
   if (!item.kev && belowFloor(item)) return null;
 
-  const category: Category = stack === 'php' ? 'vuln-php' : 'vuln-js';
+  const category: Category = `vuln-${stack}`;
   const cvss = item.cvss ?? 0;
-  const core = item.ecosystem !== undefined && CORE.includes(item.ecosystem);
+  const core = item.ecosystem === 'core';
   const prominent = core || isPopular(item) === true;
 
   let priority: Priority;
@@ -69,8 +61,8 @@ function newsCategory(item: Item, stack: Stack | undefined): Category {
   const t = text(item);
   if (SIGNALS.supplyChain.test(t)) return 'supply-chain';
   if (SIGNALS.exploited.test(t)) return 'exploited-in-wild';
-  if (stack && SIGNALS.security.test(t) && (item.feedKind === 'release' || isRce(item))) {
-    return stack === 'php' ? 'vuln-php' : 'vuln-js';
+  if (stack && (isRce(item) || (item.feedKind === 'release' && SIGNALS.security.test(t)))) {
+    return `vuln-${stack}`;
   }
   if (SIGNALS.breachMalware.test(t)) return 'breach-malware';
   if (item.feedKind === 'release' || (item.feedKind === 'dev-news' && SIGNALS.release.test(t))) {

@@ -1,6 +1,6 @@
 import { LIMITS, NVD_CPES } from '../config/sources.js';
 import { SNIPPET_MAX, truncate } from '../pipeline/normalize.js';
-import type { Ecosystem, Item } from '../types.js';
+import type { Item, Stack } from '../types.js';
 import { fetchJson } from './http.js';
 
 interface NvdResponse {
@@ -16,13 +16,7 @@ interface NvdResponse {
   }[];
 }
 
-const ECOSYSTEM_LABEL: Partial<Record<Ecosystem, string>> = {
-  'php-core': 'PHP',
-  'node-core': 'Node.js',
-  'mongodb': 'MongoDB',
-};
-
-export function parseNvd(res: NvdResponse, ecosystem: Ecosystem): Item[] {
+export function parseNvd(res: NvdResponse, product: { stack: Stack; label: string }): Item[] {
   return res.vulnerabilities
     .filter(({ cve }) => cve.vulnStatus !== 'Rejected')
     .map(({ cve }): Item => {
@@ -38,11 +32,12 @@ export function parseNvd(res: NvdResponse, ecosystem: Ecosystem): Item[] {
         aliases: [cve.id],
         kind: 'vuln',
         source: 'NVD',
-        title: `${cve.id} in ${ECOSYSTEM_LABEL[ecosystem]}`,
+        title: `${cve.id} in ${product.label}`,
         url: `https://nvd.nist.gov/vuln/detail/${cve.id}`,
         publishedAt: published.toISOString(),
         snippet: truncate(description, SNIPPET_MAX),
-        ecosystem,
+        ecosystem: 'core',
+        stackHint: product.stack,
         cwes: [...new Set(cve.weaknesses?.flatMap((w) => w.description.map((d) => d.value)) ?? [])],
         ...(scores.length ? { cvss: Math.max(...scores) } : {}),
       };
@@ -61,14 +56,22 @@ export async function fetchNvd(since: Date, apiKey?: string): Promise<Item[]> {
   const now = new Date();
   const minPublished = new Date(now.getTime() - LIMITS.nvdMaxAgeDays * 86_400_000);
   const items: Item[] = [];
-  for (const [i, { cpe, ecosystem }] of NVD_CPES.entries()) {
+  const failures: string[] = [];
+  for (const [i, { cpe, ...product }] of NVD_CPES.entries()) {
     // without an API key NVD allows 5 requests / 30s
     if (i > 0 && !apiKey) await pause(6_500);
     const url =
       `https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=${encodeURIComponent(cpe)}` +
       `&lastModStartDate=${fmt(since)}&lastModEndDate=${fmt(now)}`;
-    const res = await fetchJson<NvdResponse>(url, apiKey ? { apiKey } : {});
-    items.push(...parseNvd(res, ecosystem).filter((it) => new Date(it.publishedAt) >= minPublished));
+    try {
+      const res = await fetchJson<NvdResponse>(url, apiKey ? { apiKey } : {});
+      items.push(...parseNvd(res, product).filter((it) => new Date(it.publishedAt) >= minPublished));
+    } catch (err) {
+      // one product failing shouldn't drop the others
+      failures.push(`${product.label}: ${(err as Error).message}`);
+    }
   }
+  if (failures.length === NVD_CPES.length) throw new Error(`all NVD queries failed: ${failures[0]}`);
+  if (failures.length) console.warn(`NVD: ${failures.length} queries failed: ${failures.join('; ')}`);
   return items;
 }

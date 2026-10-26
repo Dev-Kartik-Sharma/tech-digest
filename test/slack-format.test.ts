@@ -89,6 +89,40 @@ describe('formatDigest', () => {
     expect(t).not.toContain('Tech news');
   });
 
+  it('labels the new tech-area categories', () => {
+    const t = allText(formatDigest([item({ priority: 'high', category: 'vuln-web-server' }), item({ id: 'd', priority: 'high', category: 'vuln-devops' })], '2026-10-26')!);
+    expect(t).toContain('Nginx / web server vulnerability');
+    expect(t).toContain('GitHub / GitLab vulnerability');
+  });
+
+  it('shows the publish date for items older than two days, and not for fresh ones', () => {
+    const now = new Date('2026-10-27T04:30:00Z');
+    const t = allText(
+      formatDigest(
+        [
+          item({ id: 'old', priority: 'high', title: 'OLD', publishedAt: '2026-10-12T10:00:00Z' }),
+          item({ id: 'new', priority: 'high', title: 'NEW', publishedAt: '2026-10-26T20:00:00Z' }),
+        ],
+        '2026-10-27',
+        undefined,
+        now,
+      )!,
+    );
+    expect(t).toMatch(/OLD[^•]*published 12 Oct/);
+    expect(t).not.toMatch(/NEW[^•]*published/);
+  });
+
+  it('shares a priority cap across categories so scored advisories cannot crowd out news', () => {
+    const advisories = Array.from({ length: 20 }, (_, i) => item({ id: `a${i}`, priority: 'high', category: 'vuln-js', cvss: 8, title: `ADV ${i}` }));
+    const bulletins = Array.from({ length: 3 }, (_, i) =>
+      item({ id: `b${i}`, priority: 'high', category: 'vuln-cloud', cvss: undefined, title: `AWS ${i}` }),
+    );
+    const t = allText(formatDigest([...advisories, ...bulletins], '2026-10-26', { high: 10 })!);
+    for (const i of [0, 1, 2]) expect(t).toContain(`AWS ${i}`);
+    expect(t.match(/ADV \d+/g)).toHaveLength(7);
+    expect(t).toMatch(/13 more high/);
+  });
+
   it('caps each priority and reports how many were left out', () => {
     const lows = Array.from({ length: 8 }, (_, i) => item({ id: `l${i}`, priority: 'low', category: 'tech-news', title: `low ${i}` }));
     const t = allText(formatDigest(lows, '2026-10-26', { low: 5 })!);

@@ -1,12 +1,29 @@
 # tech-updates
 
-A Slack bot for developers working in **PHP** and **MERN / JS**. It watches security advisories and
-tech news, then:
+A Slack bot for developers. It watches security advisories and tech news for these tech areas:
+
+| Tech area (digest category) | Covers |
+|---|---|
+| PHP | PHP, Laravel, Symfony, WordPress, Drupal, Composer packages |
+| JS / Node | Node.js, Express, NestJS, React, Next.js, Angular, Vue (MERN / MEAN), every npm package |
+| Python | Python, Django, Flask, FastAPI, PyPI packages |
+| Database | PostgreSQL, MySQL / MariaDB, MongoDB |
+| Nginx / web server | nginx, NGINX Plus |
+| GitHub / GitLab | GitHub (incl. Enterprise Server, Actions), GitLab |
+| Cloud | AWS (security bulletins), plus Azure, Google Cloud, Cloudflare mentions |
+
+On top of those, news is also grouped as *exploited in the wild*, *supply chain*, *breach / malware*,
+*release / update* and *tech news*. The bot:
 
 - posts **critical** items to Slack straight away (e.g. a PHP or Next.js remote code execution bug,
   or anything in your stack on CISA's actively-exploited list), and
-- posts **one daily digest** with everything else, grouped by priority (🔴 critical, 🟠 high, 🟡 medium,
-  🟢 low) and category.
+- posts **one daily digest at 10:00 IST** with everything else, grouped by priority (🔴 critical, 🟠 high,
+  🟡 medium, 🟢 low) and then by category.
+
+**What "new" means:** each digest contains what the bot first saw since the previous digest, i.e. roughly
+the last 24 hours. Every item appears once. Almost everything was published in the last 1–2 days. The
+exception is NVD, which sometimes finishes analysing an older CVE (up to 30 days old) and only then
+links it to a product like PHP or nginx. Those lines show *published 12 Oct* so you can tell.
 
 It runs on **GitHub Actions cron** with no server and no cloud account. It uses your **Gemini AI Studio
 free-tier key** for short summaries: one batched request per poll, and only when something new arrived
@@ -28,17 +45,17 @@ alerts already posted are never sent again.
 
 | Source | What it gives |
 |---|---|
-| GitHub Advisory DB (npm, composer) | Package vulnerabilities, with CVSS and affected/fixed versions |
-| NVD (CPEs for PHP, Node.js, MongoDB) | CVEs in the runtimes themselves |
+| GitHub Advisory DB (npm, composer, pip) | Package vulnerabilities, with CVSS and affected/fixed versions |
+| NVD (PHP, Node.js, Python, PostgreSQL, MySQL, MongoDB, nginx, GitLab, GitHub Enterprise Server) | CVEs in the products themselves |
 | CISA KEV | Vulnerabilities being actively exploited |
-| Node.js security feed, php.net | Official security releases |
-| The Hacker News, BleepingComputer | Security news |
-| Laravel News, Node.js blog, React blog, MongoDB blog, HN front page (300+ pts) | Dev and tech news |
+| Node.js security, php.net, Python Insider, Django, PostgreSQL, nginx.org, GitLab security releases, AWS security bulletins | Official security releases |
+| The Hacker News, BleepingComputer, GitHub Security Blog | Security news |
+| Laravel News, Node.js / React / Angular / MongoDB blogs, HN front page (300+ pts) | Dev and tech news |
 
 **Priority rules** (deterministic, so alerts still work if Gemini is down). They live in `src/pipeline/score.ts`:
 
 - **Critical:** in your stack and either on CISA KEV, or CVSS ≥ 9, or an RCE in a runtime or a popular package.
-  "Popular" means ≥ 50k downloads (npm per week, Packagist per month) or listed in `MAJOR_PACKAGES`.
+  "Popular" means ≥ 50k downloads (npm / PyPI per week, Packagist per month) or listed in `MAJOR_PACKAGES`.
 - **High:** in your stack with CVSS ≥ 7, or on KEV but outside your stack, or security news about
   your stack being actively exploited or hit by RCE or supply-chain attacks.
 - **Medium / Low:** lower CVSS bands, and general security and tech news.
@@ -47,6 +64,7 @@ alerts already posted are never sent again.
   the digest caps keep the volume in check.
 - When CISA adds a CVE to KEV, the bot looks up the GitHub advisory for that CVE, so a package
   vulnerability is recognised as in-stack even when the KEV text never mentions npm or PHP.
+- An item matching several areas gets the first one in the table above (e.g. "PHP app on AWS" → PHP).
 - Gemini writes the summaries. For **news only**, it can change the category, raise the priority by one
   level, or drop promotional posts. It never changes a vulnerability's priority.
 
@@ -77,7 +95,7 @@ The state file holds only public advisory and news data, so a public repo is fin
 |---|---|---|
 | Slack webhook URL | api.slack.com/apps → Create app → Incoming Webhooks → add to your channel | yes |
 | Gemini API key | aistudio.google.com → Get API key | recommended |
-| NVD API key | nvd.nist.gov/developers/request-an-api-key | optional (makes NVD faster) |
+| NVD API key | nvd.nist.gov/developers/request-an-api-key | recommended: without it, NVD's rate limit adds ~75 s to each run (12 product queries) |
 
 There's no GitHub token to create: the workflow's built-in `GITHUB_TOKEN` is used for the Advisory API.
 For local runs you can set `GITHUB_TOKEN` in `.env` to raise the API rate limit.
@@ -100,7 +118,7 @@ npm run local                     # actually posts (point SLACK_WEBHOOK_URL at a
    and, optionally, `NVD_API_KEY`.
 3. **Same page → Variables** (optional): `DIGEST_TIMEZONE` (e.g. `Asia/Kolkata`), `GEMINI_MODEL`.
 4. Set the digest time: edit the second cron in `.github/workflows/tech-updates.yml` **and** the
-   `DIGEST_CRON` value to match. Both are in UTC. The default `30 3 * * *` is 03:30 UTC (09:00 IST).
+   `DIGEST_CRON` value to match. Both are in UTC. The default `30 4 * * *` is 04:30 UTC (10:00 IST).
 5. **Actions tab → tech-updates → Run workflow** with `poll` for the first run. Check the channel,
    then run `digest`.
 

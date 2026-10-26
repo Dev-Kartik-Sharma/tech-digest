@@ -1,9 +1,18 @@
 export const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
+/** Tech areas the team cares about, in detection order (first keyword match wins). */
+export const STACKS = ['php', 'js', 'python', 'database', 'web-server', 'devops', 'cloud'] as const;
+export type Stack = (typeof STACKS)[number];
+
 export const CATEGORIES = [
   'vuln-php',
   'vuln-js',
+  'vuln-python',
+  'vuln-database',
+  'vuln-web-server',
+  'vuln-devops',
+  'vuln-cloud',
   'exploited-in-wild',
   'supply-chain',
   'breach-malware',
@@ -12,10 +21,8 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-export type Stack = 'php' | 'js';
-
-/** Where a vulnerability lives. `core` = the language runtime / database itself. */
-export type Ecosystem = 'npm' | 'composer' | 'php-core' | 'node-core' | 'mongodb';
+/** Where a vulnerability lives: a package registry, or `core` = the product itself (PHP, nginx, MySQL…). */
+export type Ecosystem = 'npm' | 'composer' | 'pip' | 'core';
 
 /** How a news feed should be treated when scoring. */
 export type FeedKind = 'security-news' | 'release' | 'dev-news' | 'tech-news';
@@ -53,8 +60,8 @@ export interface Item {
   feedKind?: FeedKind;
   /** CVE ids the article mentions. Not identity aliases: one article can cover several CVEs. */
   mentions?: string[];
-  /** Stack implied by the feed itself (e.g. Laravel News → php). */
-  feedStack?: Stack;
+  /** Tech area implied by the source: a single-topic feed (Laravel News → php) or an NVD product (nginx → web-server). */
+  stackHint?: Stack;
 }
 
 export interface ScoredItem extends Item {

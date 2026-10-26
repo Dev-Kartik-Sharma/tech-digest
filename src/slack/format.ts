@@ -12,6 +12,11 @@ const EMOJI: Record<Priority, string> = { critical: '🔴', high: '🟠', medium
 const CATEGORY_LABEL: Record<Category, string> = {
   'vuln-php': 'PHP vulnerability',
   'vuln-js': 'JS / Node vulnerability',
+  'vuln-python': 'Python vulnerability',
+  'vuln-database': 'Database vulnerability',
+  'vuln-web-server': 'Nginx / web server vulnerability',
+  'vuln-devops': 'GitHub / GitLab vulnerability',
+  'vuln-cloud': 'Cloud (AWS & co.) vulnerability',
   'exploited-in-wild': 'Exploited in the wild',
   'supply-chain': 'Supply chain',
   'breach-malware': 'Breach / malware',
@@ -50,10 +55,31 @@ export function formatCritical(item: ScoredItem, { escalated = false } = {}): Sl
   return { text: `${label}: ${escapeMrkdwn(title)}`, blocks };
 }
 
-function digestLine(item: ScoredItem): string {
-  const extra = [item.cvss !== undefined ? `CVSS ${item.cvss.toFixed(1)}` : '', item.kev ? 'KEV' : ''].filter(Boolean).join(', ');
+const OLD_AFTER_MS = 2 * 86_400_000;
+const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+function digestLine(item: ScoredItem, now: Date): string {
+  // most items are from the last day; flag the few that aren't (e.g. NVD finishing an older CVE)
+  const old = now.getTime() - new Date(item.publishedAt).getTime() > OLD_AFTER_MS;
+  const extra = [
+    item.cvss !== undefined ? `CVSS ${item.cvss.toFixed(1)}` : '',
+    item.kev ? 'KEV' : '',
+    old ? `published ${shortDate.format(new Date(item.publishedAt))}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
   const summary = truncate(item.summary ?? item.snippet, 160);
   return `• ${link(item.url, truncate(item.title, 120))}${extra ? ` (${extra})` : ''}${summary ? ` — ${escapeMrkdwn(summary)}` : ''} · _${escapeMrkdwn(item.source)}_`;
+}
+
+/** Takes up to `cap` items round-robin across categories (each already in best-first order). */
+function fairShare(items: ScoredItem[], cap: number): ScoredItem[] {
+  const queues = CATEGORIES.map((c) => items.filter((i) => i.category === c)).filter((q) => q.length);
+  const out: ScoredItem[] = [];
+  for (let round = 0; out.length < cap && queues.some((q) => q.length > round); round++) {
+    for (const q of queues) if (q[round] && out.length < cap) out.push(q[round]!);
+  }
+  return out;
 }
 
 /** Packs lines into as few ≤ MAX_SECTION_CHARS sections as possible. */
@@ -76,6 +102,7 @@ export function formatDigest(
   items: ScoredItem[],
   date: string,
   caps: Partial<Record<Priority, number>> = LIMITS.digestCaps,
+  now = new Date(),
 ): SlackPayload | null {
   if (!items.length) return null;
 
@@ -90,13 +117,13 @@ export function formatDigest(
       .filter((i) => i.priority === priority)
       .sort((a, b) => (b.cvss ?? 0) - (a.cvss ?? 0) || b.publishedAt.localeCompare(a.publishedAt));
     if (!all.length) continue;
-    const shown = all.slice(0, caps[priority] ?? Infinity);
+    const shown = fairShare(all, caps[priority] ?? Infinity);
     selected += shown.length;
 
     candidates.push({ block: { type: 'divider' }, lines: 0 });
     candidates.push({ block: section(`*${EMOJI[priority]} ${priority.toUpperCase()}*`), lines: 0 });
     for (const category of CATEGORIES) {
-      const lines = shown.filter((i) => i.category === category).map(digestLine);
+      const lines = shown.filter((i) => i.category === category).map((i) => digestLine(i, now));
       if (!lines.length) continue;
       for (const text of packSections(`*${CATEGORY_LABEL[category]}*`, lines)) {
         candidates.push({ block: section(text), lines: text.split('\n• ').length - 1 + (text.startsWith('• ') ? 1 : 0) });

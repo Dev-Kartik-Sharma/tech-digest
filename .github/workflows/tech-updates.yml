@@ -5,7 +5,7 @@ on:
     # Times are UTC. GitHub may start scheduled runs several minutes late; odd minutes dodge the
     # top-of-hour rush. If you change the digest cron, update DIGEST_CRON below to match.
     - cron: '7,37 * * * *' # poll every 30 min
-    - cron: '30 3 * * *' # daily digest
+    - cron: '30 4 * * *' # daily digest: 04:30 UTC = 10:00 IST
   workflow_dispatch:
     inputs:
       command:
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DIGEST_CRON: '30 3 * * *'
+  DIGEST_CRON: '30 4 * * *'
   STATE_BRANCH: state
   STATE_FILE: state/state.json
 

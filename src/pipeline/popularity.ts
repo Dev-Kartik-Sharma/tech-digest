@@ -3,7 +3,7 @@ import type { AffectedPackage, Item } from '../types.js';
 
 export type DownloadLookup = (name: string, ecosystem: AffectedPackage['ecosystem']) => Promise<number | undefined>;
 
-/** npm: weekly downloads. Packagist: monthly downloads. */
+/** npm and PyPI: weekly downloads. Packagist: monthly downloads. */
 export const registryDownloads: DownloadLookup = async (name, ecosystem) => {
   if (ecosystem === 'npm') {
     const res = await fetchJson<{ downloads?: number }>(`https://api.npmjs.org/downloads/point/last-week/${name}`);
@@ -14,6 +14,12 @@ export const registryDownloads: DownloadLookup = async (name, ecosystem) => {
       `https://packagist.org/packages/${name}.json`,
     );
     return res.package?.downloads?.monthly;
+  }
+  if (ecosystem === 'pip') {
+    const res = await fetchJson<{ data?: { last_week?: number } }>(
+      `https://pypistats.org/api/packages/${encodeURIComponent(name.toLowerCase())}/recent`,
+    );
+    return res.data?.last_week;
   }
   return undefined;
 };

@@ -14,7 +14,7 @@ const RESPONSE_SCHEMA = {
       i: { type: 'integer' },
       summary: { type: 'string', description: 'At most 2 short sentences: what it is, who is affected, what to do.' },
       category: { type: 'string', enum: [...CATEGORIES] },
-      relevant: { type: 'boolean', description: 'Worth a PHP / MERN (MongoDB, Express, React, Node.js) developer\'s attention.' },
+      relevant: { type: 'boolean', description: "Worth these developers' attention." },
       bump: { type: 'boolean', description: 'True only if clearly more urgent than its current priority.' },
       reason: { type: 'string', description: 'One short phrase, only when bump is true.' },
     },
@@ -47,7 +47,8 @@ function buildPrompt(batch: ScoredItem[]): string {
     ...(it.packages?.length ? { packages: it.packages.map((p) => p.name).slice(0, 5) } : {}),
   }));
   return [
-    'You triage tech and security news for a team of developers whose main stacks are PHP (Laravel, WordPress, Symfony) and MERN (MongoDB, Express, React, Node.js).',
+    'You triage tech and security news for a team of developers working with PHP (Laravel, WordPress, Symfony), JavaScript/TypeScript (Node.js, Express, NestJS, React, Next.js, Angular: MERN and MEAN stacks, npm packages),',
+    'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MongoDB), nginx, GitHub/GitLab and cloud platforms (mainly AWS).',
     `For each item return: a plain-English summary (max 2 short sentences), the best category from [${CATEGORIES.join(', ')}],`,
     'whether it is relevant to these developers (general tech news that developers commonly care about counts as relevant; marketing, webinars and promos do not),',
     'and whether its priority should be bumped one level because it is clearly more urgent than labelled.',

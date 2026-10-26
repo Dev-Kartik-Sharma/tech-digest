@@ -33,7 +33,7 @@ export async function parseFeed(xml: string, feed: FeedSource): Promise<Item[]> 
         publishedAt: toIso(e.isoDate ?? e.pubDate),
         snippet,
         feedKind: feed.kind,
-        ...(feed.stack ? { feedStack: feed.stack } : {}),
+        ...(feed.stack ? { stackHint: feed.stack } : {}),
       };
     });
 }

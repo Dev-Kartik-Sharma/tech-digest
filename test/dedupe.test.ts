@@ -7,7 +7,7 @@ const base = { kind: 'vuln' as const, title: 't', url: 'u', publishedAt: '2026-1
 describe('mergeDuplicates', () => {
   it('merges the same CVE from GHSA, NVD and KEV into one item', () => {
     const items: Item[] = [
-      { ...base, id: 'CVE-1', aliases: ['CVE-1'], source: 'NVD', ecosystem: 'php-core', cvss: 9.8, snippet: 'nvd text' },
+      { ...base, id: 'CVE-1', aliases: ['CVE-1'], source: 'NVD', ecosystem: 'core', stackHint: 'php', cvss: 9.8, snippet: 'nvd text' },
       { ...base, id: 'CVE-1', aliases: ['CVE-1'], source: 'CISA KEV', kev: true },
       {
         ...base,
@@ -36,7 +36,7 @@ describe('mergeDuplicates', () => {
   it('folds a news article that mentions a CVE into the vulnerability', () => {
     const merged = mergeDuplicates([
       { ...base, kind: 'news', id: 'url-1', aliases: ['url-1'], mentions: ['CVE-2'], source: 'The Hacker News', feedKind: 'security-news' },
-      { ...base, id: 'CVE-2', aliases: ['CVE-2'], source: 'NVD', ecosystem: 'node-core' },
+      { ...base, id: 'CVE-2', aliases: ['CVE-2'], source: 'NVD', ecosystem: 'core', stackHint: 'js' },
     ]);
     expect(merged).toHaveLength(1);
     expect(merged[0]).toMatchObject({ id: 'CVE-2', kind: 'vuln', source: 'NVD' });
