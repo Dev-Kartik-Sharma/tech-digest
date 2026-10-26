@@ -41,6 +41,13 @@ describe('addDownloads', () => {
     expect(seen).toEqual(['pip:django']);
   });
 
+  it('never looks up core products (they are not registry packages)', async () => {
+    const core: Item = { ...item('c', []), ecosystem: 'core', packages: [{ name: 'PHP', ecosystem: 'core' }] };
+    let calls = 0;
+    await addDownloads([core], async () => (calls++, 1));
+    expect(calls).toBe(0);
+  });
+
   it('skips items without packages', async () => {
     const news: Item = { ...item('n', []), kind: 'news', packages: undefined };
     const out = await addDownloads([news], async () => 1);

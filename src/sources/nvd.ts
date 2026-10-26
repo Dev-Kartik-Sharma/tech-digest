@@ -1,6 +1,6 @@
 import { LIMITS, NVD_CPES } from '../config/sources.js';
 import { SNIPPET_MAX, truncate } from '../pipeline/normalize.js';
-import type { Item, Stack } from '../types.js';
+import type { AffectedPackage, Item, Stack } from '../types.js';
 import { fetchJson } from './http.js';
 
 interface NvdResponse {
@@ -12,11 +12,52 @@ interface NvdResponse {
       descriptions: { lang: string; value: string }[];
       metrics?: Record<string, { cvssData?: { baseScore?: number } }[]>;
       weaknesses?: { description: { value: string }[] }[];
+      configurations?: { nodes: { cpeMatch: CpeMatch[] }[] }[];
     };
   }[];
 }
 
-export function parseNvd(res: NvdResponse, product: { stack: Stack; label: string }): Item[] {
+interface CpeMatch {
+  vulnerable: boolean;
+  criteria: string;
+  versionStartIncluding?: string;
+  versionStartExcluding?: string;
+  versionEndIncluding?: string;
+  versionEndExcluding?: string;
+}
+
+type Product = { cpe: string; stack: Stack; label: string };
+
+/**
+ * Affected ranges for our product, from NVD's CPE configuration. `versionEndExcluding` is the first
+ * fixed release; a range that only has `versionEndIncluding` (e.g. an end-of-life branch) has no fix.
+ */
+function affected(cve: NvdResponse['vulnerabilities'][number]['cve'], product: Product): AffectedPackage | undefined {
+  const ranges: string[] = [];
+  const fixes: string[] = [];
+  for (const m of cve.configurations?.flatMap((c) => c.nodes.flatMap((n) => n.cpeMatch)) ?? []) {
+    if (!m.vulnerable || !m.criteria.startsWith(`${product.cpe}:`)) continue;
+    const exact = m.criteria.split(':')[5];
+    const parts = [
+      m.versionStartIncluding && `>= ${m.versionStartIncluding}`,
+      m.versionStartExcluding && `> ${m.versionStartExcluding}`,
+      m.versionEndIncluding && `<= ${m.versionEndIncluding}`,
+      m.versionEndExcluding && `< ${m.versionEndExcluding}`,
+    ].filter(Boolean);
+    if (parts.length) ranges.push(parts.join(', '));
+    else if (exact && exact !== '*' && exact !== '-') ranges.push(`= ${exact}`);
+    if (m.versionEndExcluding) fixes.push(m.versionEndExcluding);
+  }
+  if (!ranges.length) return undefined;
+  return {
+    name: product.label,
+    ecosystem: 'core',
+    vulnerableRange: [...new Set(ranges)].join(' | '),
+    ...(fixes.length ? { patched: [...new Set(fixes)].join(', ') } : {}),
+  };
+}
+
+export function parseNvd(res: NvdResponse, product: Product): Item[] {
   return res.vulnerabilities
     .filter(({ cve }) => cve.vulnStatus !== 'Rejected')
     .map(({ cve }): Item => {
@@ -26,6 +67,7 @@ export function parseNvd(res: NvdResponse, product: { stack: Stack; label: strin
         .filter((s): s is number => typeof s === 'number');
       const description = cve.descriptions.find((d) => d.lang === 'en')?.value ?? '';
       // NVD timestamps have no zone suffix but are UTC
+      const versions = affected(cve, product);
       const published = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(cve.published) ? cve.published : `${cve.published}Z`);
       return {
         id: cve.id,
@@ -38,6 +80,7 @@ export function parseNvd(res: NvdResponse, product: { stack: Stack; label: strin
         snippet: truncate(description, SNIPPET_MAX),
         ecosystem: 'core',
         stackHint: product.stack,
+        ...(versions ? { packages: [versions] } : {}),
         cwes: [...new Set(cve.weaknesses?.flatMap((w) => w.description.map((d) => d.value)) ?? [])],
         ...(scores.length ? { cvss: Math.max(...scores) } : {}),
       };
@@ -57,11 +100,11 @@ export async function fetchNvd(since: Date, apiKey?: string): Promise<Item[]> {
   const minPublished = new Date(now.getTime() - LIMITS.nvdMaxAgeDays * 86_400_000);
   const items: Item[] = [];
   const failures: string[] = [];
-  for (const [i, { cpe, ...product }] of NVD_CPES.entries()) {
+  for (const [i, product] of NVD_CPES.entries()) {
     // without an API key NVD allows 5 requests / 30s
     if (i > 0 && !apiKey) await pause(6_500);
     const url =
-      `https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=${encodeURIComponent(cpe)}` +
+      `https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=${encodeURIComponent(product.cpe)}` +
       `&lastModStartDate=${fmt(since)}&lastModEndDate=${fmt(now)}`;
     try {
       const res = await fetchJson<NvdResponse>(url, apiKey ? { apiKey } : {});

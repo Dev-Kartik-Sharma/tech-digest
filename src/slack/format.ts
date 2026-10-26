@@ -43,13 +43,14 @@ export function formatCritical(item: ScoredItem, { escalated = false } = {}): Sl
     item.aliases.filter((a) => /^(CVE|GHSA)-/.test(a)).join(', ') || undefined,
   ].filter(Boolean);
   const pkgs = (item.packages ?? []).slice(0, 5).map(
-    (p) => `• \`${p.name}\`${p.vulnerableRange ? ` ${escapeMrkdwn(p.vulnerableRange)}` : ''} → fixed in *${escapeMrkdwn(p.patched ?? 'no fix yet')}*`,
+    (p) =>
+      `• \`${p.name}\`${p.vulnerableRange ? ` ${escapeMrkdwn(truncate(p.vulnerableRange, 200))}` : ''} → fixed in *${escapeMrkdwn(p.patched ?? 'no fix yet')}*`,
   );
   const blocks = [
     context(`*${label}*`),
     section(`*${link(item.url, title)}*\n${escapeMrkdwn(truncate(item.summary ?? item.snippet, 600))}`),
     ...(facts.length ? [context(facts.join('  ·  '))] : []),
-    ...(pkgs.length ? [section(`*Affected packages*\n${pkgs.join('\n')}`)] : []),
+    ...(pkgs.length ? [section(`*Affected ${item.ecosystem === 'core' ? 'versions' : 'packages'}*\n${pkgs.join('\n')}`)] : []),
     context(`Source: ${escapeMrkdwn(item.source)}${item.bumpReason ? ` · bumped: ${escapeMrkdwn(item.bumpReason)}` : ''}`),
   ];
   return { text: `${label}: ${escapeMrkdwn(title)}`, blocks };
@@ -68,8 +69,19 @@ function digestLine(item: ScoredItem, now: Date): string {
   ]
     .filter(Boolean)
     .join(', ');
-  const summary = truncate(item.summary ?? item.snippet, 160);
-  return `• ${link(item.url, truncate(item.title, 120))}${extra ? ` (${extra})` : ''}${summary ? ` — ${escapeMrkdwn(summary)}` : ''} · _${escapeMrkdwn(item.source)}_`;
+  // long enough to keep the summary's closing "Upgrade X to Y" step
+  const summary = truncate(item.summary ?? item.snippet, 240);
+  const fix = fixNote(item);
+  return `• ${link(item.url, truncate(item.title, 120))}${extra ? ` (${extra})` : ''}${fix ? ` · *${escapeMrkdwn(fix)}*` : ''}${summary ? ` — ${escapeMrkdwn(summary)}` : ''} · _${escapeMrkdwn(item.source)}_`;
+}
+
+/** "fix: laravel/framework 13.29.0" / "no fix yet" for vulnerabilities with version info. */
+function fixNote(item: ScoredItem): string {
+  if (item.kind !== 'vuln' || !item.packages?.length) return '';
+  const fixed = item.packages.find((p) => p.patched);
+  if (!fixed) return 'no fix yet';
+  const others = item.packages.length - 1;
+  return `fix: ${fixed.name} ${truncate(fixed.patched!, 60)}${others ? ` (+${others} more)` : ''}`;
 }
 
 /** Takes up to `cap` items round-robin across categories (each already in best-first order). */

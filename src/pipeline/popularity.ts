@@ -28,7 +28,10 @@ const CONCURRENCY = 5;
 
 export async function addDownloads(items: Item[], lookup: DownloadLookup = registryDownloads): Promise<Item[]> {
   const pkgs = new Map<string, AffectedPackage>();
-  for (const p of items.flatMap((i) => i.packages ?? [])) pkgs.set(`${p.ecosystem}:${p.name}`, p);
+  for (const p of items.flatMap((i) => i.packages ?? [])) {
+    // core products (PHP, nginx…) carry version info in `packages` but aren't registry packages
+    if (p.ecosystem !== 'core') pkgs.set(`${p.ecosystem}:${p.name}`, p);
+  }
 
   const counts = new Map<string, number>();
   const queue = [...pkgs.entries()];

@@ -74,9 +74,27 @@ describe('ghsaForKev', () => {
   });
 });
 
+const PHP_PRODUCT = { cpe: 'cpe:2.3:a:php:php', stack: 'php' as const, label: 'PHP' };
+
 describe('parseNvd', () => {
+  it('reads affected ranges and fixed versions for the queried product only', () => {
+    const items = parseNvd(json('nvd-php.json'), PHP_PRODUCT);
+    expect(items.find((i) => i.id === 'CVE-2024-5585')?.packages).toEqual([
+      {
+        name: 'PHP',
+        ecosystem: 'core',
+        vulnerableRange: '>= 8.1.0, < 8.1.29 | >= 8.2.0, < 8.2.20 | >= 8.3.0, < 8.3.8',
+        patched: '8.1.29, 8.2.20, 8.3.8',
+      },
+    ]);
+    // end-of-life branches (only versionEndIncluding) are affected but have no fix
+    const eol = items.find((i) => i.id === 'CVE-2024-5458')?.packages?.[0];
+    expect(eol?.vulnerableRange).toContain('>= 7.3.27, <= 7.3.33');
+    expect(eol?.patched).toBe('8.1.29, 8.2.20, 8.3.8');
+  });
+
   it('normalizes CVEs with the highest available CVSS score', () => {
-    const items = parseNvd(json('nvd-php.json'), { stack: 'php', label: 'PHP' });
+    const items = parseNvd(json('nvd-php.json'), PHP_PRODUCT);
     const cve = items.find((i) => i.id === 'CVE-2024-5585');
     expect(cve).toMatchObject({
       kind: 'vuln',

@@ -89,6 +89,28 @@ describe('formatDigest', () => {
     expect(t).not.toContain('Tech news');
   });
 
+  it('shows the fix version on digest lines for vulnerabilities', () => {
+    const t = allText(
+      formatDigest(
+        [
+          item({ id: 'p', priority: 'high', title: 'FIXED', packages: [{ name: 'laravel/framework', ecosystem: 'composer', patched: '13.29.0, 12.68.0' }] }),
+          item({ id: 'n', priority: 'high', title: 'UNFIXED', packages: [{ name: 'left-pad', ecosystem: 'npm' }] }),
+          item({ id: 'x', priority: 'high', kind: 'news', category: 'tech-news', title: 'NEWS', packages: undefined }),
+        ],
+        '2026-10-26',
+      )!,
+    );
+    expect(t).toMatch(/FIXED[^•]*fix: laravel\/framework 13\.29\.0, 12\.68\.0/);
+    expect(t).toMatch(/UNFIXED[^•]*no fix yet/);
+    expect(t).not.toMatch(/NEWS[^•]*fix/);
+  });
+
+  it('titles core-product version lists as affected versions', () => {
+    const p = formatCritical(item({ ecosystem: 'core', packages: [{ name: 'PHP', ecosystem: 'core', vulnerableRange: '>= 8.3.0, < 8.3.8', patched: '8.3.8' }] }));
+    expect(allText(p)).toContain('Affected versions');
+    expect(allText(p)).toContain('8.3.8');
+  });
+
   it('labels the new tech-area categories', () => {
     const t = allText(formatDigest([item({ priority: 'high', category: 'vuln-web-server' }), item({ id: 'd', priority: 'high', category: 'vuln-devops' })], '2026-10-26')!);
     expect(t).toContain('Nginx / web server vulnerability');

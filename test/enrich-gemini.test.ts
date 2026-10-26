@@ -77,6 +77,17 @@ describe('enrichWithGemini', () => {
     expect(out.filter((i) => i.summary === 'ok')).toHaveLength(90);
   });
 
+  it('sends fixed versions to Gemini and asks for a concrete next step', async () => {
+    const calls: string[] = [];
+    await enrichWithGemini(
+      [scored(0, { kind: 'vuln', category: 'vuln-php', packages: [{ name: 'laravel/framework', ecosystem: 'composer', patched: '13.29.0' }] })],
+      fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false }), calls),
+    );
+    expect(calls[0]).toContain('laravel/framework');
+    expect(calls[0]).toContain('13.29.0');
+    expect(calls[0]).toMatch(/upgrade/i);
+  });
+
   it('makes no call when there are no items', async () => {
     const calls: string[] = [];
     await enrichWithGemini([], fakeModel(() => ({}), calls));
