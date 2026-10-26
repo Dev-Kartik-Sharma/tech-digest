@@ -1,0 +1,28 @@
+{
+  "name": "tech-updates",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Dev-focused tech & security news bot that posts to Slack (runs on GitHub Actions cron)",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "local": "tsx scripts/run-local.ts",
+    "poll": "tsx src/main.ts poll",
+    "digest": "tsx src/main.ts digest"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@google/genai": "^2.31.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

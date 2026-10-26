@@ -1,0 +1,89 @@
+name: tech-updates
+
+on:
+  schedule:
+    # Times are UTC. GitHub may start scheduled runs several minutes late; odd minutes dodge the
+    # top-of-hour rush. If you change the digest cron, update DIGEST_CRON below to match.
+    - cron: '7,37 * * * *' # poll every 30 min
+    - cron: '30 3 * * *' # daily digest
+  workflow_dispatch:
+    inputs:
+      command:
+        description: What to run
+        type: choice
+        options: [poll, digest]
+        default: poll
+
+permissions:
+  contents: write # push the state branch
+
+# one run at a time, so two runs never write the state file at once
+concurrency:
+  group: tech-updates-state
+  cancel-in-progress: false
+
+env:
+  DIGEST_CRON: '30 3 * * *'
+  STATE_BRANCH: state
+  STATE_FILE: state/state.json
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Restore state
+        run: |
+          mkdir -p state
+          set +e
+          git ls-remote --exit-code --heads origin "$STATE_BRANCH" > /dev/null
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch --depth=1 origin "$STATE_BRANCH"
+            git show FETCH_HEAD:state.json > "$STATE_FILE"
+          elif [ "$status" -eq 2 ]; then
+            echo "No $STATE_BRANCH branch yet: first run starts with empty state"
+          else
+            # never fall back to empty state on a network error: that would re-alert everything
+            echo "::error::could not check for the $STATE_BRANCH branch"; exit 1
+          fi
+
+      - name: Run
+        env:
+          COMMAND: ${{ github.event_name == 'workflow_dispatch' && inputs.command || (github.event.schedule == env.DIGEST_CRON && 'digest' || 'poll') }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          DIGEST_TIMEZONE: ${{ vars.DIGEST_TIMEZONE || 'UTC' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-lite-latest' }}
+        run: npx tsx src/main.ts "$COMMAND"
+
+      # Runs even if the step above failed: alerts already posted must stay marked as seen.
+      # The branch holds a single commit that is force-pushed each time, so history never grows.
+      - name: Save state
+        if: always() && hashFiles('state/state.json') != ''
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          cd state
+          git init -q -b "$STATE_BRANCH"
+          git add state.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "bot state $(date -u +%FT%TZ)"
+          # a lost save means the next run re-alerts, so retry transient push failures
+          for attempt in 1 2 3; do
+            git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:$STATE_BRANCH" && exit 0
+            echo "push attempt $attempt failed"; sleep $((attempt * 10))
+          done
+          exit 1

@@ -1,0 +1,123 @@
+import { LIMITS } from '../config/sources.js';
+import { truncate } from '../pipeline/normalize.js';
+import { CATEGORIES, PRIORITIES, type Category, type Priority, type ScoredItem } from '../types.js';
+
+export interface SlackPayload {
+  text: string;
+  blocks: Record<string, unknown>[];
+}
+
+const EMOJI: Record<Priority, string> = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' };
+
+const CATEGORY_LABEL: Record<Category, string> = {
+  'vuln-php': 'PHP vulnerability',
+  'vuln-js': 'JS / Node vulnerability',
+  'exploited-in-wild': 'Exploited in the wild',
+  'supply-chain': 'Supply chain',
+  'breach-malware': 'Breach / malware',
+  'release-update': 'Release / update',
+  'tech-news': 'Tech news',
+};
+
+const MAX_BLOCKS = 50;
+const MAX_SECTION_CHARS = 2900;
+
+export const escapeMrkdwn = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const link = (url: string, title: string) => `<${url}|${escapeMrkdwn(title).replace(/\|/g, '¦')}>`;
+
+const section = (text: string) => ({ type: 'section', text: { type: 'mrkdwn', text } });
+const context = (text: string) => ({ type: 'context', elements: [{ type: 'mrkdwn', text }] });
+
+export function formatCritical(item: ScoredItem, { escalated = false } = {}): SlackPayload {
+  const title = truncate(item.title, 200);
+  const label = `${EMOJI.critical} CRITICAL · ${CATEGORY_LABEL[item.category]}${escalated ? ' · ⬆️ escalated' : ''}`;
+  const facts = [
+    item.cvss !== undefined ? `*CVSS ${item.cvss.toFixed(1)}*` : undefined,
+    item.kev ? '*Actively exploited (CISA KEV)*' : undefined,
+    item.aliases.filter((a) => /^(CVE|GHSA)-/.test(a)).join(', ') || undefined,
+  ].filter(Boolean);
+  const pkgs = (item.packages ?? []).slice(0, 5).map(
+    (p) => `• \`${p.name}\`${p.vulnerableRange ? ` ${escapeMrkdwn(p.vulnerableRange)}` : ''} → fixed in *${escapeMrkdwn(p.patched ?? 'no fix yet')}*`,
+  );
+  const blocks = [
+    context(`*${label}*`),
+    section(`*${link(item.url, title)}*\n${escapeMrkdwn(truncate(item.summary ?? item.snippet, 600))}`),
+    ...(facts.length ? [context(facts.join('  ·  '))] : []),
+    ...(pkgs.length ? [section(`*Affected packages*\n${pkgs.join('\n')}`)] : []),
+    context(`Source: ${escapeMrkdwn(item.source)}${item.bumpReason ? ` · bumped: ${escapeMrkdwn(item.bumpReason)}` : ''}`),
+  ];
+  return { text: `${label}: ${escapeMrkdwn(title)}`, blocks };
+}
+
+function digestLine(item: ScoredItem): string {
+  const extra = [item.cvss !== undefined ? `CVSS ${item.cvss.toFixed(1)}` : '', item.kev ? 'KEV' : ''].filter(Boolean).join(', ');
+  const summary = truncate(item.summary ?? item.snippet, 160);
+  return `• ${link(item.url, truncate(item.title, 120))}${extra ? ` (${extra})` : ''}${summary ? ` — ${escapeMrkdwn(summary)}` : ''} · _${escapeMrkdwn(item.source)}_`;
+}
+
+/** Packs lines into as few ≤ MAX_SECTION_CHARS sections as possible. */
+function packSections(heading: string, lines: string[]): string[] {
+  const out: string[] = [];
+  let current = heading;
+  for (const line of lines) {
+    if (current.length + line.length + 1 > MAX_SECTION_CHARS) {
+      out.push(current);
+      current = line;
+    } else {
+      current += `\n${line}`;
+    }
+  }
+  out.push(current);
+  return out;
+}
+
+export function formatDigest(
+  items: ScoredItem[],
+  date: string,
+  caps: Partial<Record<Priority, number>> = LIMITS.digestCaps,
+): SlackPayload | null {
+  if (!items.length) return null;
+
+  const counts = PRIORITIES.map((p) => [p, items.filter((i) => i.priority === p).length] as const).filter(([, n]) => n);
+  const summaryText = counts.map(([p, n]) => `${n} ${p}`).join(' · ');
+
+  // every block remembers how many item lines it carries, so truncation can be reported
+  const candidates: { block: Record<string, unknown>; lines: number }[] = [];
+  let selected = 0;
+  for (const priority of PRIORITIES) {
+    const all = items
+      .filter((i) => i.priority === priority)
+      .sort((a, b) => (b.cvss ?? 0) - (a.cvss ?? 0) || b.publishedAt.localeCompare(a.publishedAt));
+    if (!all.length) continue;
+    const shown = all.slice(0, caps[priority] ?? Infinity);
+    selected += shown.length;
+
+    candidates.push({ block: { type: 'divider' }, lines: 0 });
+    candidates.push({ block: section(`*${EMOJI[priority]} ${priority.toUpperCase()}*`), lines: 0 });
+    for (const category of CATEGORIES) {
+      const lines = shown.filter((i) => i.category === category).map(digestLine);
+      if (!lines.length) continue;
+      for (const text of packSections(`*${CATEGORY_LABEL[category]}*`, lines)) {
+        candidates.push({ block: section(text), lines: text.split('\n• ').length - 1 + (text.startsWith('• ') ? 1 : 0) });
+      }
+    }
+    if (all.length > shown.length) {
+      candidates.push({ block: context(`…and ${all.length - shown.length} more ${priority} items`), lines: 0 });
+    }
+  }
+
+  const blocks: Record<string, unknown>[] = [
+    { type: 'header', text: { type: 'plain_text', text: `🛡️ Tech & Security Digest — ${date}` } },
+    context(summaryText),
+  ];
+  const budget = MAX_BLOCKS - 1; // room for the "not shown" note
+  let included = 0;
+  for (const c of candidates) {
+    if (blocks.length >= budget) break;
+    blocks.push(c.block);
+    included += c.lines;
+  }
+  if (included < selected) blocks.push(context(`…${selected - included} more items not shown (Slack message limit)`));
+  return { text: `Tech & Security Digest ${date}: ${summaryText}`, blocks };
+}

@@ -1,0 +1,429 @@
+[
+  {
+    "ghsa_id": "GHSA-xcx6-jx8p-x3h5",
+    "cve_id": "CVE-2026-109461",
+    "url": "https://api.github.com/advisories/GHSA-xcx6-jx8p-x3h5",
+    "html_url": "https://github.com/advisories/GHSA-xcx6-jx8p-x3h5",
+    "summary": "MSAL Node authorization code flow may disclose parameters to an attacker-controlled endpoint",
+    "description": "### Impact\n\nOrigin validation error in Microsoft Authentication Library (MSAL) for Node.js allows an unauthorized attacker to disclose information over a network. This affects the auth_code flow.\n\n### Patches\n\nVersion 7.1.0 and higher are patched.\n\n### Workarounds\n\nEnsure you pass in only the auth_code to to acquireTokenByCode",
+    "type": "reviewed",
+    "severity": "high",
+    "repository_advisory_url": "https://api.github.com/repos/AzureAD/microsoft-authentication-library-for-js/security-advisories/GHSA-xcx6-jx8p-x3h5",
+    "source_code_location": "https://github.com/AzureAD/microsoft-authentication-library-for-js",
+    "identifiers": [
+      {
+        "value": "GHSA-xcx6-jx8p-x3h5",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-109461",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/AzureAD/microsoft-authentication-library-for-js/security/advisories/GHSA-xcx6-jx8p-x3h5",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-109461",
+      "https://github.com/AzureAD/microsoft-authentication-library-for-js/pull/8901",
+      "https://github.com/AzureAD/microsoft-authentication-library-for-js/commit/f550958586475dbfeb1cd44be14a2d653728850e",
+      "https://github.com/AzureAD/microsoft-authentication-library-for-js/releases/tag/msal-node-v7.1.0",
+      "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-109461",
+      "https://github.com/advisories/GHSA-xcx6-jx8p-x3h5"
+    ],
+    "published_at": "2026-10-23T22:16:44Z",
+    "updated_at": "2026-10-23T22:16:45Z",
+    "github_reviewed_at": "2026-10-23T22:16:44Z",
+    "nvd_published_at": "2026-10-16T18:17:31Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "@azure/msal-node"
+        },
+        "vulnerable_version_range": ">= 5.0.0-beta.0, < 7.1.0",
+        "first_patched_version": "7.1.0",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+        "score": 7.5
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-346",
+        "name": "Origin Validation Error"
+      }
+    ],
+    "credits": [
+
+    ],
+    "comments": 1,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "score": 7.5
+    },
+    "epss": {
+      "percentage": 0.00361,
+      "percentile": 0.29658
+    }
+  },
+  {
+    "ghsa_id": "GHSA-xjj6-f33q-929c",
+    "cve_id": "CVE-2026-109869",
+    "url": "https://api.github.com/advisories/GHSA-xjj6-f33q-929c",
+    "html_url": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
+    "summary": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+    "description": "### Impact\n\nundici's `fetch()` crashes the Node.js process when a malicious server returns a response with more than five content codings and closes the connection before sending the body. undici rejects such responses (a content-encoding limit), but it created the internal response stream before that check and returned without attaching an error listener or aborting the request. The early close then surfaces a content-length mismatch on that orphaned internal stream, which Node.js treats as an unhandled `error` and terminates the process. A remote, unauthenticated server can trigger this with a single response, even when the application correctly catches the `fetch()` rejection. undici 6.x, 7.x, and 8.x are affected.\n\n### Patches\n\nUpgrade to `6.29.1`, `7.30.1`, or `8.12.2`. undici now validates the content-encoding chain before creating the internal body stream and aborts the response when the limit is exceeded, so no error can surface on an orphaned stream.\n\n### Workarounds\n\nNone.",
+    "type": "reviewed",
+    "severity": "high",
+    "repository_advisory_url": "https://api.github.com/repos/nodejs/undici/security-advisories/GHSA-xjj6-f33q-929c",
+    "source_code_location": "https://github.com/nodejs/undici",
+    "identifiers": [
+      {
+        "value": "GHSA-xjj6-f33q-929c",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-109869",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-109869",
+      "https://github.com/nodejs/undici/commit/07ded4941b1e72afec862958c3b8ddf468f3b429",
+      "https://github.com/nodejs/undici/commit/1325a87dfb3492f8e87e6b0a84b3bda4e82e3436",
+      "https://github.com/nodejs/undici/commit/b5084c7dc239172d75c336b1cd51ddac023938a5",
+      "https://cna.openjsf.org/security-advisories.html",
+      "https://github.com/nodejs/undici/releases/tag/v6.29.1",
+      "https://github.com/nodejs/undici/releases/tag/v7.30.1",
+      "https://github.com/nodejs/undici/releases/tag/v8.12.2",
+      "https://github.com/advisories/GHSA-xjj6-f33q-929c"
+    ],
+    "published_at": "2026-10-23T22:14:31Z",
+    "updated_at": "2026-10-23T22:14:32Z",
+    "github_reviewed_at": "2026-10-23T22:14:31Z",
+    "nvd_published_at": "2026-10-15T19:17:21Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 6.23.0, < 6.29.1",
+        "first_patched_version": "6.29.1",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+        "first_patched_version": "7.30.1",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+        "first_patched_version": "8.12.2",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+        "score": 7.5
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-248",
+        "name": "Uncaught Exception"
+      },
+      {
+        "cwe_id": "CWE-459",
+        "name": "Incomplete Cleanup"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "hanityx",
+          "id": 37394823,
+          "node_id": "MDQ6VXNlcjM3Mzk0ODIz",
+          "avatar_url": "https://avatars.githubusercontent.com/u/37394823?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/hanityx",
+          "html_url": "https://github.com/hanityx",
+          "followers_url": "https://api.github.com/users/hanityx/followers",
+          "following_url": "https://api.github.com/users/hanityx/following{/other_user}",
+          "gists_url": "https://api.github.com/users/hanityx/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/hanityx/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/hanityx/subscriptions",
+          "organizations_url": "https://api.github.com/users/hanityx/orgs",
+          "repos_url": "https://api.github.com/users/hanityx/repos",
+          "events_url": "https://api.github.com/users/hanityx/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/hanityx/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      },
+      {
+        "user": {
+          "login": "mcollina",
+          "id": 52195,
+          "node_id": "MDQ6VXNlcjUyMTk1",
+          "avatar_url": "https://avatars.githubusercontent.com/u/52195?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/mcollina",
+          "html_url": "https://github.com/mcollina",
+          "followers_url": "https://api.github.com/users/mcollina/followers",
+          "following_url": "https://api.github.com/users/mcollina/following{/other_user}",
+          "gists_url": "https://api.github.com/users/mcollina/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/mcollina/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/mcollina/subscriptions",
+          "organizations_url": "https://api.github.com/users/mcollina/orgs",
+          "repos_url": "https://api.github.com/users/mcollina/repos",
+          "events_url": "https://api.github.com/users/mcollina/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/mcollina/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "remediation_developer"
+      },
+      {
+        "user": {
+          "login": "UlisesGascon",
+          "id": 5110813,
+          "node_id": "MDQ6VXNlcjUxMTA4MTM=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/5110813?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/UlisesGascon",
+          "html_url": "https://github.com/UlisesGascon",
+          "followers_url": "https://api.github.com/users/UlisesGascon/followers",
+          "following_url": "https://api.github.com/users/UlisesGascon/following{/other_user}",
+          "gists_url": "https://api.github.com/users/UlisesGascon/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/UlisesGascon/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/UlisesGascon/subscriptions",
+          "organizations_url": "https://api.github.com/users/UlisesGascon/orgs",
+          "repos_url": "https://api.github.com/users/UlisesGascon/repos",
+          "events_url": "https://api.github.com/users/UlisesGascon/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/UlisesGascon/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "remediation_reviewer"
+      }
+    ],
+    "comments": 2,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 7.5
+    },
+    "epss": {
+      "percentage": 0.00344,
+      "percentile": 0.27642
+    }
+  },
+  {
+    "ghsa_id": "GHSA-4qv8-2p9j-2685",
+    "cve_id": "CVE-2026-109924",
+    "url": "https://api.github.com/advisories/GHSA-4qv8-2p9j-2685",
+    "html_url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685",
+    "summary": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser",
+    "description": "### Impact\n\nundici's `EventSource` client can be driven to exhaust process memory by a malicious or compromised Server-Sent Events peer. By sending millions of tiny completed `data:` fields with no blank event separator, or a single unfinished line split across many chunks, the parser retains a growing amount of per-field and per-chunk state. The byte-based `maxEventSize` and `maxResponseSize` limits do not bound that retained state, and `maxResponseSize` is enforced on the compressed body before decompression, so a small compressed response can expand into enough retained memory to terminate the process. The application only needs to maintain an `EventSource` connection to an untrusted peer, which controls only the response. Availability is the only impact.\n\n### Patches\n\nUpgrade to `6.29.1`, `7.30.1`, or `8.12.2`, which bound the retained EventSource parser state (the number of `data` fields and buffered chunks, the unfinished-line length, and per-field byte totals) independently of the byte limits.\n\n### Workarounds\n\nNone.",
+    "type": "reviewed",
+    "severity": "medium",
+    "repository_advisory_url": "https://api.github.com/repos/nodejs/undici/security-advisories/GHSA-4qv8-2p9j-2685",
+    "source_code_location": "https://github.com/nodejs/undici",
+    "identifiers": [
+      {
+        "value": "GHSA-4qv8-2p9j-2685",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-109924",
+        "type": "CVE"
+      }
+    ],
+    "references": [
+      "https://github.com/nodejs/undici/security/advisories/GHSA-4qv8-2p9j-2685",
+      "https://nvd.nist.gov/vuln/detail/CVE-2026-109924",
+      "https://github.com/nodejs/undici/commit/299162740d5f39120092277e70efacb4d151c1c6",
+      "https://github.com/nodejs/undici/commit/789ef26461c648480433846607154f52d74ec9ab",
+      "https://github.com/nodejs/undici/commit/c43b23fdc6b37e1283d4347408bb16800f867d9e",
+      "https://cna.openjsf.org/security-advisories.html",
+      "https://github.com/nodejs/undici/releases/tag/v6.29.1",
+      "https://github.com/nodejs/undici/releases/tag/v7.30.1",
+      "https://github.com/nodejs/undici/releases/tag/v8.12.2",
+      "https://github.com/advisories/GHSA-4qv8-2p9j-2685"
+    ],
+    "published_at": "2026-10-23T22:13:29Z",
+    "updated_at": "2026-10-23T22:13:31Z",
+    "github_reviewed_at": "2026-10-23T22:13:29Z",
+    "nvd_published_at": "2026-10-15T19:17:22Z",
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 6.5.0, < 6.29.1",
+        "first_patched_version": "6.29.1",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+        "first_patched_version": "7.30.1",
+        "vulnerable_functions": [
+
+        ]
+      },
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+        "first_patched_version": "8.12.2",
+        "vulnerable_functions": [
+
+        ]
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+        "score": 5.9
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": 0.0
+      }
+    },
+    "cwes": [
+      {
+        "cwe_id": "CWE-770",
+        "name": "Allocation of Resources Without Limits or Throttling"
+      }
+    ],
+    "credits": [
+      {
+        "user": {
+          "login": "iamibi",
+          "id": 8592115,
+          "node_id": "MDQ6VXNlcjg1OTIxMTU=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/8592115?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/iamibi",
+          "html_url": "https://github.com/iamibi",
+          "followers_url": "https://api.github.com/users/iamibi/followers",
+          "following_url": "https://api.github.com/users/iamibi/following{/other_user}",
+          "gists_url": "https://api.github.com/users/iamibi/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/iamibi/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/iamibi/subscriptions",
+          "organizations_url": "https://api.github.com/users/iamibi/orgs",
+          "repos_url": "https://api.github.com/users/iamibi/repos",
+          "events_url": "https://api.github.com/users/iamibi/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/iamibi/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "reporter"
+      },
+      {
+        "user": {
+          "login": "mcollina",
+          "id": 52195,
+          "node_id": "MDQ6VXNlcjUyMTk1",
+          "avatar_url": "https://avatars.githubusercontent.com/u/52195?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/mcollina",
+          "html_url": "https://github.com/mcollina",
+          "followers_url": "https://api.github.com/users/mcollina/followers",
+          "following_url": "https://api.github.com/users/mcollina/following{/other_user}",
+          "gists_url": "https://api.github.com/users/mcollina/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/mcollina/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/mcollina/subscriptions",
+          "organizations_url": "https://api.github.com/users/mcollina/orgs",
+          "repos_url": "https://api.github.com/users/mcollina/repos",
+          "events_url": "https://api.github.com/users/mcollina/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/mcollina/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "remediation_reviewer"
+      },
+      {
+        "user": {
+          "login": "UlisesGascon",
+          "id": 5110813,
+          "node_id": "MDQ6VXNlcjUxMTA4MTM=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/5110813?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/UlisesGascon",
+          "html_url": "https://github.com/UlisesGascon",
+          "followers_url": "https://api.github.com/users/UlisesGascon/followers",
+          "following_url": "https://api.github.com/users/UlisesGascon/following{/other_user}",
+          "gists_url": "https://api.github.com/users/UlisesGascon/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/UlisesGascon/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/UlisesGascon/subscriptions",
+          "organizations_url": "https://api.github.com/users/UlisesGascon/orgs",
+          "repos_url": "https://api.github.com/users/UlisesGascon/repos",
+          "events_url": "https://api.github.com/users/UlisesGascon/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/UlisesGascon/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "type": "remediation_reviewer"
+      }
+    ],
+    "comments": 10,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 5.9
+    },
+    "epss": {
+      "percentage": 0.00321,
+      "percentile": 0.24857
+    }
+  }
+]
