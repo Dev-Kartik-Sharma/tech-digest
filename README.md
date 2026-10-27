@@ -19,7 +19,7 @@ On top of those, news is also grouped as *exploited in the wild*, *supply chain*
 - posts **critical** items to Slack straight away (e.g. a PHP or Next.js remote code execution bug,
   or anything in your stack on CISA's actively-exploited list). Alerts aren't repeated in the digest;
   only criticals beyond the 5-per-poll cap go there instead. And it
-- posts **one daily digest at 10:00 IST** with everything else, grouped by priority (🔴 critical, 🟠 high,
+- posts **one daily digest, on the first run after 10:00 IST** (usually by ~11:00), with everything else, grouped by priority (🔴 critical, 🟠 high,
   🟡 medium, 🟢 low) and then by category.
 
 **What "new" means:** each digest contains what the bot first saw since the previous digest, i.e. roughly
@@ -27,17 +27,19 @@ the last 24 hours. Every item appears once. Almost everything was published in t
 exception is NVD, which sometimes finishes analysing an older CVE (up to 30 days old) and only then
 links it to a product like PHP or nginx. Those lines show *published 12 Oct* so you can tell.
 
-It runs on **GitHub Actions cron** with no server and no cloud account. It uses your **Gemini AI Studio
+It runs on **GitHub Actions**, triggered hourly by a free external scheduler (cron-job.org), with no
+server and no cloud account. It uses your **Gemini AI Studio
 free-tier key** for short summaries: one batched request per poll, and only when something new arrived
 (up to 3 on a busy first run).
 
 ## How it works
 
 ```
-GitHub Actions cron ─ every 30 min ─▶ npm run poll
-    fetch sources → merge duplicates → popularity lookup → rule-based score
-    → drop already-seen → 1 batched Gemini call → critical? post now : queue for digest
-GitHub Actions cron ─ daily ─▶ npm run digest → one Slack message → clear queue
+cron-job.org (hourly) ──┐
+GitHub cron (every 2h) ─┴─▶ workflow `auto`
+  1. poll:   fetch sources → merge duplicates → popularity lookup → rule-based score
+             → drop already-seen → 1 batched Gemini call → critical? post now : queue for digest
+  2. digest: past DIGEST_AFTER (10:00 IST) and today's not sent yet? → one Slack message
 ```
 
 State is one JSON file: the items already handled (kept 45 days) plus the digest queue. The workflow keeps
@@ -80,18 +82,17 @@ alerts already posted are never sent again.
 
 | | Public repo | Private repo (Free plan) |
 |---|---|---|
-| Actions minutes | unlimited, free | 2,000 / month included. This bot uses ~1,450 (each run rounds up to 1 min) |
-| Gemini AI Studio free tier | ≤ ~50 requests / day | same |
-
-On a private repo, if you want more headroom, change the poll cron to hourly (`7 * * * *`, ~750 min/month).
+| Actions minutes | unlimited, free | 2,000 / month included. This bot uses ~1,100–1,500 (~36 runs/day, ~1–1.5 min each) |
+| Gemini AI Studio free tier | ≤ ~36 requests / day | same |
+| cron-job.org | free | same |
 The state file holds only public advisory and news data, so a public repo is fine.
 
 **Good to know**
-- GitHub's cron is best-effort: runs can start 5–30 minutes late at busy times. That's fine for news.
-- Cron times are **UTC**. Set the digest time in the workflow, and set the `DIGEST_TIMEZONE` variable so
-  the digest's date header uses your local date.
-- GitHub disables scheduled workflows in **public** repos after 60 days without repository activity. If
-  that happens you'll get an email; re-enable the workflow in the Actions tab.
+- GitHub's own cron is best-effort and on this repo it skipped most runs, which is why an external
+  scheduler is the main trigger. Because every run is `auto`, it doesn't matter which trigger fires, or
+  if one is missed: the next run catches up, and the digest still goes out exactly once a day.
+- GitHub disables the backup **schedule** in public repos after 60 days without repository activity
+  (you'll get an email). The cron-job.org trigger keeps working regardless.
 - On Gemini's free tier, Google may use prompts to improve its products. The bot only sends public
   headlines and advisories.
 
@@ -124,17 +125,38 @@ npm run local                     # actually posts (point SLACK_WEBHOOK_URL at a
 1. Push this project to a GitHub repo.
 2. **Settings → Secrets and variables → Actions → Secrets:** add `SLACK_WEBHOOK_URL`, `GEMINI_API_KEY`
    and, optionally, `NVD_API_KEY`.
-3. **Same page → Variables** (optional): `DIGEST_TIMEZONE` (e.g. `Asia/Kolkata`), `GEMINI_MODEL`.
-4. Set the digest time: edit the second cron in `.github/workflows/tech-updates.yml` **and** the
-   `DIGEST_CRON` value to match. Both are in UTC. The default `30 4 * * *` is 04:30 UTC (10:00 IST).
-5. **Actions tab → tech-updates → Run workflow** with `poll` for the first run. Check the channel,
-   then run `digest`.
+3. **Same page → Variables** (optional): `DIGEST_TIMEZONE` (default `Asia/Kolkata`), `DIGEST_AFTER`
+   (local time the digest may go out, default `10:00`), `GEMINI_MODEL`.
+4. Set up the hourly trigger (below).
+5. **Actions tab → tech-updates → Run workflow** (`auto`) for the first run and check the channel.
+   You can also run `poll` or `digest` by hand; a manual `digest` counts as that day's digest.
 
 The first poll looks back 48 hours. It sends at most 5 instant alerts, and anything beyond that goes into
-the digest. Running `poll` again right away should post nothing, because those items are now marked as seen.
+the digest. Running it again right away should post nothing, because those items are now marked as seen.
 
-Manual runs on your machine use the same state format: `npm run poll` and `npm run digest`, with state kept
-in `state/state.json`.
+Manual runs on your machine use the same state format: `npm run auto`, `npm run poll` and
+`npm run digest`, with state kept in `state/state.json`.
+
+### 4. Hourly trigger with cron-job.org
+
+1. **Create a token** that can only start this repo's workflows: GitHub → Settings → Developer settings →
+   Fine-grained tokens → Generate new token.
+   - Repository access: *Only select repositories* → this repo.
+   - Permissions → Repository → **Actions: Read and write** (nothing else).
+   - Expiration: up to 1 year; set yourself a reminder to renew it.
+
+   It can start or cancel this repo's workflow runs, but it can't read secrets or change code.
+2. **Create a cron job** at cron-job.org (free account):
+   - URL: `https://api.github.com/repos/<owner>/<repo>/actions/workflows/tech-updates.yml/dispatches`
+   - Schedule: every hour (e.g. at minute 15), time zone Asia/Kolkata.
+   - Advanced → Request method **POST**, headers:
+     - `Authorization: Bearer <token>`
+     - `Accept: application/vnd.github+json`
+     - `X-GitHub-Api-Version: 2022-11-28`
+     - `Content-Type: application/json`
+   - Request body: `{"ref":"main","inputs":{"command":"auto"}}`
+   - Notifications: on failure. GitHub answers **204 No Content** on success.
+3. Press **Test run** and check that a new `workflow_dispatch` run appears in the Actions tab.
 
 ## Tuning
 
@@ -152,5 +174,5 @@ src/store/                Store interface, in-memory store, JSON file store
 src/handlers/             runPoll / runDigest (all dependencies injected, so they're testable offline)
 src/main.ts               entry point used by the workflow: `poll` | `digest`
 scripts/run-local.ts      preview runner (in-memory state)
-.github/workflows/        cron schedule, state restore/save
+.github/workflows/        triggers (external + backup cron), state restore/save
 ```

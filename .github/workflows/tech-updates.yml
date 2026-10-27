@@ -1,18 +1,19 @@
 name: tech-updates
 
 on:
+  # The main trigger is an external scheduler (cron-job.org) calling workflow_dispatch with
+  # command=auto every hour; see README. GitHub's own cron is unreliable for this repo (it skips
+  # runs under load), so it's only a backup here. Every run is `auto`: it polls and posts the day's
+  # digest once, on the first run after DIGEST_AFTER, so exact trigger times don't matter.
   schedule:
-    # Times are UTC. GitHub may start scheduled runs several minutes late; odd minutes dodge the
-    # top-of-hour rush. If you change the digest cron, update DIGEST_CRON below to match.
-    - cron: '7,37 * * * *' # poll every 30 min
-    - cron: '30 4 * * *' # daily digest: 04:30 UTC = 10:00 IST
+    - cron: '17 */2 * * *' # backup: every 2 hours (UTC)
   workflow_dispatch:
     inputs:
       command:
         description: What to run
         type: choice
-        options: [poll, digest]
-        default: poll
+        options: [auto, poll, digest]
+        default: auto
 
 permissions:
   contents: write # push the state branch
@@ -23,7 +24,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DIGEST_CRON: '30 4 * * *'
   STATE_BRANCH: state
   STATE_FILE: state/state.json
 
@@ -60,12 +60,13 @@ jobs:
 
       - name: Run
         env:
-          COMMAND: ${{ github.event_name == 'workflow_dispatch' && inputs.command || (github.event.schedule == env.DIGEST_CRON && 'digest' || 'poll') }}
+          COMMAND: ${{ inputs.command || 'auto' }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
-          DIGEST_TIMEZONE: ${{ vars.DIGEST_TIMEZONE || 'UTC' }}
+          DIGEST_TIMEZONE: ${{ vars.DIGEST_TIMEZONE || 'Asia/Kolkata' }}
+          DIGEST_AFTER: ${{ vars.DIGEST_AFTER || '10:00' }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-lite-latest' }}
         run: npx tsx src/main.ts "$COMMAND"
 

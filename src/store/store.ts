@@ -15,6 +15,9 @@ export interface Store {
   addPending(items: ScoredItem[]): Promise<void>;
   listPending(): Promise<PendingEntry[]>;
   deletePending(keys: string[]): Promise<void>;
+  /** Local date (YYYY-MM-DD) of the last digest, so it goes out once per day. */
+  getLastDigestDate(): Promise<string | undefined>;
+  setLastDigestDate(date: string): Promise<void>;
 }
 
 export const pendingKey = (item: ScoredItem) => `${item.priority}#${item.publishedAt}#${item.id}`;
@@ -22,6 +25,7 @@ export const pendingKey = (item: ScoredItem) => `${item.priority}#${item.publish
 export class MemoryStore implements Store {
   seen = new Map<string, Priority>();
   pending = new Map<string, ScoredItem>();
+  lastDigestDate: string | undefined;
 
   async getSeen(aliases: string[]) {
     return new Map(aliases.filter((a) => this.seen.has(a)).map((a) => [a, this.seen.get(a)!]));
@@ -37,5 +41,11 @@ export class MemoryStore implements Store {
   }
   async deletePending(keys: string[]) {
     for (const k of keys) this.pending.delete(k);
+  }
+  async getLastDigestDate() {
+    return this.lastDigestDate;
+  }
+  async setLastDigestDate(date: string) {
+    this.lastDigestDate = date;
   }
 }

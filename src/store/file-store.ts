@@ -12,6 +12,7 @@ interface StateFile {
   /** alias → priority handled at + expiry (epoch ms) */
   seen: Record<string, { p: Priority; exp: number }>;
   pending: Record<string, { item: ScoredItem; exp: number }>;
+  lastDigestDate?: string;
 }
 
 /**
@@ -59,6 +60,14 @@ export class FileStore implements Store {
 
   async deletePending(keys: string[]) {
     for (const k of keys) delete this.state.pending[k];
+  }
+
+  async getLastDigestDate() {
+    return this.state.lastDigestDate;
+  }
+
+  async setLastDigestDate(date: string) {
+    this.state.lastDigestDate = date;
   }
 
   /** Atomic write (temp file + rename) so a killed run can't leave half a file. */

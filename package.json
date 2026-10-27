@@ -9,6 +9,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "local": "tsx scripts/run-local.ts",
+    "auto": "tsx src/main.ts auto",
     "poll": "tsx src/main.ts poll",
     "digest": "tsx src/main.ts digest"
   },

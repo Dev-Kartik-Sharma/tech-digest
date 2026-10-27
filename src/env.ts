@@ -7,7 +7,8 @@ import type { Item } from './types.js';
 
 /**
  * Builds runtime dependencies from env vars (or ./.env when present):
- * SLACK_WEBHOOK_URL (required unless dryRun), GEMINI_API_KEY, GITHUB_TOKEN, NVD_API_KEY, GEMINI_MODEL.
+ * SLACK_WEBHOOK_URL (required unless dryRun), GEMINI_API_KEY, GITHUB_TOKEN, NVD_API_KEY, GEMINI_MODEL,
+ * DIGEST_TIMEZONE (default UTC), DIGEST_AFTER (local HH:MM the daily digest may go out, default 10:00).
  */
 export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
   if (existsSync('.env')) process.loadEnvFile('.env');
@@ -18,6 +19,9 @@ export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
 
   const gemini = env('GEMINI_API_KEY');
   if (!gemini) console.warn('GEMINI_API_KEY not set: skipping AI summaries');
+
+  const digestAfter = env('DIGEST_AFTER') ?? '10:00';
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(digestAfter)) throw new Error(`DIGEST_AFTER must be HH:MM (24h), got "${digestAfter}"`);
 
   const githubToken = env('GITHUB_TOKEN');
   const nvdApiKey = env('NVD_API_KEY');
@@ -30,5 +34,6 @@ export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
       else await postToSlack(webhook!, p);
     },
     timeZone: env('DIGEST_TIMEZONE') ?? 'UTC',
+    digestAfter,
   };
 }

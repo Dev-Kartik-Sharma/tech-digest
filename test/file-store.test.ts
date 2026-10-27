@@ -42,6 +42,15 @@ describe('FileStore', () => {
     expect((await reloaded.listPending()).map((e) => e.item.id)).toEqual(['B']);
   });
 
+  it('persists the last digest date', async () => {
+    const path = tmpFile();
+    const store = await FileStore.load(path, NOW);
+    expect(await store.getLastDigestDate()).toBeUndefined();
+    await store.setLastDigestDate('2026-10-27');
+    await store.save();
+    expect(await (await FileStore.load(path, NOW)).getLastDigestDate()).toBe('2026-10-27');
+  });
+
   it('deletes pending entries by key', async () => {
     const store = await FileStore.load(tmpFile(), NOW);
     await store.addPending([item('A'), item('B')]);
