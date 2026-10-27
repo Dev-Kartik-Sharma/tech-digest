@@ -158,6 +158,26 @@ describe('scoreItem: news', () => {
     expect(s).toMatchObject({ priority: 'high', category: 'vuln-cloud' });
   });
 
+  it('rates an AI model launch from an AI feed as medium ai-update', () => {
+    const s = scoreItem(news({ feedKind: 'ai-news', title: 'Introducing GPT-6', snippet: 'Our new model scores 80% on SWE-bench.' }));
+    expect(s).toMatchObject({ priority: 'medium', category: 'ai-update' });
+  });
+
+  it('rates other AI feed posts as low ai-update', () => {
+    const s = scoreItem(news({ feedKind: 'ai-news', title: 'How our team thinks about AI safety' }));
+    expect(s).toMatchObject({ priority: 'low', category: 'ai-update' });
+  });
+
+  it('recognises AI launches in general tech news', () => {
+    const s = scoreItem(news({ feedKind: 'tech-news', title: 'Anthropic launches Claude Example 6 for agentic coding' }));
+    expect(s).toMatchObject({ priority: 'medium', category: 'ai-update' });
+  });
+
+  it('treats a vulnerability in an AI coding tool as vuln-ai', () => {
+    const s = scoreItem(news({ title: 'Claude Code flaw allowed remote code execution via malicious repo' }));
+    expect(s).toMatchObject({ priority: 'high', category: 'vuln-ai' });
+  });
+
   it('rates general tech news as low tech-news', () => {
     const s = scoreItem(news({ feedKind: 'tech-news', title: 'A new open-source text editor' }));
     expect(s).toMatchObject({ priority: 'low', category: 'tech-news' });

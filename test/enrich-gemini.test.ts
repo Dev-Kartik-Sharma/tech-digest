@@ -88,6 +88,17 @@ describe('enrichWithGemini', () => {
     expect(calls[0]).toMatch(/upgrade/i);
   });
 
+  it('sends AI news with more text and asks for capabilities and stated benchmarks', async () => {
+    const calls: string[] = [];
+    const long = `Model scores 81.2% on SWE-bench Verified. ${'Details. '.repeat(80)}END-MARKER`;
+    await enrichWithGemini(
+      [scored(0, { feedKind: 'ai-news', category: 'ai-update', snippet: long.slice(0, 700) })],
+      fakeModel(() => ({ summary: 's', category: 'ai-update', relevant: true, bump: false }), calls),
+    );
+    expect(calls[0]).toContain(long.slice(0, 650));
+    expect(calls[0]).toMatch(/benchmark/i);
+  });
+
   it('makes no call when there are no items', async () => {
     const calls: string[] = [];
     await enrichWithGemini([], fakeModel(() => ({}), calls));

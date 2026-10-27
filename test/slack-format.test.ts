@@ -117,6 +117,12 @@ describe('formatDigest', () => {
     expect(t).toContain('GitHub / GitLab vulnerability');
   });
 
+  it('labels AI categories', () => {
+    const t = allText(formatDigest([item({ priority: 'medium', kind: 'news', category: 'ai-update' }), item({ id: 'v', priority: 'high', category: 'vuln-ai' })], '2026-10-26')!);
+    expect(t).toContain('AI models &amp; tools');
+    expect(t).toContain('AI tools vulnerability');
+  });
+
   it('shows the publish date for items older than two days, and not for fresh ones', () => {
     const now = new Date('2026-10-27T04:30:00Z');
     const t = allText(

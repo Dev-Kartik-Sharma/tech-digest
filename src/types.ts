@@ -2,7 +2,7 @@ export const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
 /** Tech areas the team cares about, in detection order (first keyword match wins). */
-export const STACKS = ['php', 'js', 'python', 'database', 'web-server', 'devops', 'cloud'] as const;
+export const STACKS = ['php', 'js', 'python', 'database', 'web-server', 'devops', 'cloud', 'ai'] as const;
 export type Stack = (typeof STACKS)[number];
 
 export const CATEGORIES = [
@@ -13,9 +13,11 @@ export const CATEGORIES = [
   'vuln-web-server',
   'vuln-devops',
   'vuln-cloud',
+  'vuln-ai',
   'exploited-in-wild',
   'supply-chain',
   'breach-malware',
+  'ai-update',
   'release-update',
   'tech-news',
 ] as const;
@@ -25,7 +27,7 @@ export type Category = (typeof CATEGORIES)[number];
 export type Ecosystem = 'npm' | 'composer' | 'pip' | 'core';
 
 /** How a news feed should be treated when scoring. */
-export type FeedKind = 'security-news' | 'release' | 'dev-news' | 'tech-news';
+export type FeedKind = 'security-news' | 'release' | 'dev-news' | 'ai-news' | 'tech-news';
 
 export interface AffectedPackage {
   name: string;

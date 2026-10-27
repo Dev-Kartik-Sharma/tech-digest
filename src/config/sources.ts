@@ -28,6 +28,15 @@ export const RSS_FEEDS: FeedSource[] = [
   { name: 'React Blog', url: 'https://react.dev/rss.xml', kind: 'dev-news', stack: 'js' },
   { name: 'Angular Blog', url: 'https://blog.angular.dev/feed', kind: 'dev-news', stack: 'js' },
   { name: 'MongoDB Blog', url: 'https://www.mongodb.com/blog/rss', kind: 'dev-news', stack: 'database' },
+  // AI models, research and developer tools (Anthropic has no feed: see sources/anthropic.ts)
+  { name: 'OpenAI', url: 'https://openai.com/news/rss.xml', kind: 'ai-news', stack: 'ai' },
+  { name: 'Google AI', url: 'https://blog.google/technology/ai/rss/', kind: 'ai-news', stack: 'ai' },
+  { name: 'Google DeepMind', url: 'https://deepmind.google/blog/rss.xml', kind: 'ai-news', stack: 'ai' },
+  { name: 'Hugging Face', url: 'https://huggingface.co/blog/feed.xml', kind: 'ai-news', stack: 'ai' },
+  { name: 'GitHub AI & ML', url: 'https://github.blog/ai-and-ml/feed/', kind: 'ai-news', stack: 'ai' },
+  { name: 'Simon Willison', url: 'https://simonwillison.net/atom/entries/', kind: 'ai-news', stack: 'ai' },
+  { name: 'Latent Space', url: 'https://www.latent.space/feed', kind: 'ai-news', stack: 'ai' },
+  { name: 'TechCrunch AI', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', kind: 'ai-news', stack: 'ai' },
   { name: 'Hacker News', url: 'https://hnrss.org/frontpage?points=300', kind: 'tech-news' },
 ];
 
@@ -86,6 +95,31 @@ export const STACK_KEYWORDS: Record<Stack, RegExp[]> = {
   'web-server': [/\bnginx\b/i],
   devops: [/\bgithub\b/i, /\bgitlab\b/i],
   cloud: [/\baws\b/i, /\bamazon web services\b/i, /\bamazon (s3|ec2|rds)\b/i, /\bazure\b/i, /\bgoogle cloud\b/i, /\bgcp\b/i, /\bcloudflare\b/i],
+  ai: [
+    /\bclaude\b/i,
+    /\banthropic\b/i,
+    /\bopenai\b/i,
+    /\bchatgpt\b/i,
+    /\bgpt-\d/i,
+    /\bgemini\b/i,
+    /\bdeepmind\b/i,
+    /\bllama\b/i,
+    /\bmistral\b/i,
+    /\bdeepseek\b/i,
+    /\bqwen\b/i,
+    /\bgrok\b/i,
+    /\bLLMs?\b/,
+    /\bcopilot\b/i,
+    /\bCursor\b/, // case-sensitive: the editor, not a mouse cursor
+    /\bcodex\b/i,
+    /\bMCP\b/,
+    /\bmodel context protocol\b/i,
+    /\blangchain\b/i,
+    /\bollama\b/i,
+    /\bhugging ?face\b/i,
+    /\bAI (coding )?(agent|assistant)s?\b/i,
+    /\bagentic\b/i,
+  ],
 };
 
 export const SIGNALS = {
@@ -96,6 +130,8 @@ export const SIGNALS = {
   breachMalware: /\bbreach|ransomware|malware|infostealer|stealer|botnet|backdoor|data leak/i,
   security: /security|vulnerab|\bflaws?\b|\bCVE-\d{4}-\d+/i,
   release: /\breleased?\b|\bv?\d+\.\d+(\.\d+)?\b|\bannounc/i,
+  /** AI posts worth more than a skim: launches, new capabilities, benchmark results. */
+  aiLaunch: /\b(introduc(es|ing)|launch(es|ed|ing)?|unveil(s|ed)?|releas(es|ed|ing)|announc(es|ed|ing)|debuts?|now available|generally available|benchmarks?|SWE-bench)\b/i,
 };
 
 /** Popular packages that are critical-eligible even if the download lookup fails. */
@@ -125,6 +161,6 @@ export const LIMITS = {
   geminiBatchSize: 30,
   geminiMaxCallsPerRun: 3,
   seenTtlDays: 45,
-  digestCaps: { critical: 10, high: 15, medium: 10, low: 5 },
+  digestCaps: { critical: 10, high: 15, medium: 12, low: 8 },
   fetchTimeoutMs: 15_000,
 };

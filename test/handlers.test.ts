@@ -59,7 +59,7 @@ describe('runPoll', () => {
     expect(posts).toHaveLength(1);
     expect(posts[0]?.text).toMatch(/CRITICAL.*PHP remote code execution #1/);
     const pending = (await store.listPending()).map((e) => e.item.id).sort();
-    expect(pending).toEqual(['CVE-2026-1001', 'GHSA-med']); // critical kept for the digest recap
+    expect(pending).toEqual(['GHSA-med']); // an alerted critical is not repeated in the digest
     expect(stats).toMatchObject({ fetched: 2, fresh: 2, alerted: 1 });
 
     await runPoll(d);
@@ -71,7 +71,8 @@ describe('runPoll', () => {
     const { d, posts, store } = deps(items);
     await runPoll(d);
     expect(posts).toHaveLength(5);
-    expect((await store.listPending()).filter((e) => e.item.priority === 'critical')).toHaveLength(8);
+    // only the 3 that weren't alerted go to the digest
+    expect((await store.listPending()).filter((e) => e.item.priority === 'critical')).toHaveLength(3);
   });
 
   it('does not mark an alert as seen when Slack fails, so the next run retries it', async () => {
@@ -222,9 +223,10 @@ describe('runDigest', () => {
     await runPoll(d);
     const posts: SlackPayload[] = [];
     const res = await runDigest({ store, post: async (p) => void posts.push(p), now: NOW, timeZone: 'UTC' });
-    expect(res.posted).toBe(2);
+    expect(res.posted).toBe(1);
     expect(posts).toHaveLength(1);
-    expect(posts[0]?.text).toMatch(/2026-10-26.*1 critical · 1 medium/);
+    expect(posts[0]?.text).toMatch(/2026-10-26.*1 medium/);
+    expect(posts[0]?.text).not.toMatch(/critical/);
     expect(await store.listPending()).toEqual([]);
   });
 

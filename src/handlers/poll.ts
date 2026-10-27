@@ -78,9 +78,10 @@ export async function runPoll(deps: PollDeps) {
   // escalations beyond the per-run cap (they keep their old seen record).
   const retryLater = (i: ScoredItem) => failed.has(i.id) || (escalatedIds.has(i.id) && !alertIds.has(i.id));
 
-  // escalations were already in an earlier digest unless Slack rejected the alert;
-  // everything else (including alerted criticals) goes in today's
-  await deps.store.addPending(enriched.filter((i) => !retryLater(i) && (!escalatedIds.has(i.id) || rejected.has(i.id))));
+  // Whatever was alerted is not repeated in the digest. The digest gets everything else, including
+  // criticals beyond the per-run cap and alerts Slack rejected.
+  const alerted = new Set(toAlert.filter((i) => !failed.has(i.id) && !rejected.has(i.id)).map((i) => i.id));
+  await deps.store.addPending(enriched.filter((i) => !retryLater(i) && !alerted.has(i.id)));
 
   const enrichedById = new Map(enriched.map((i) => [i.id, i]));
   await deps.store.markSeen([

@@ -13,6 +13,8 @@ export function stripHtml(html: string): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&(#?\w+);/g, (m, e: string) => ENTITIES[e] ?? decodeNumeric(e) ?? m)
     .replace(/\s+/g, ' ')
+    // tags replaced by spaces leave "Skills , the" behind inline links
+    .replace(/\s+([,.;:!?)])/g, '$1')
     .trim();
 }
 
@@ -39,3 +41,5 @@ export function toIso(date: string | undefined): string {
 }
 
 export const SNIPPET_MAX = 400;
+/** AI posts keep more text so summaries can mention capabilities and stated benchmark scores. */
+export const AI_SNIPPET_MAX = 1200;

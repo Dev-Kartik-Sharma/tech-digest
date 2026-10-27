@@ -1,5 +1,6 @@
 import { RSS_FEEDS } from '../config/sources.js';
 import type { Item } from '../types.js';
+import { fetchAnthropic } from './anthropic.js';
 import { fetchKev } from './cisa-kev.js';
 import { fetchGhsa, fetchGhsaByCve, ghsaForKev } from './github-advisories.js';
 import { fetchNvd } from './nvd.js';
@@ -16,6 +17,7 @@ export async function fetchAll(since: Date, keys: SourceKeys = {}): Promise<Item
     ['GitHub Advisories', fetchGhsa(since, keys.githubToken)],
     ['NVD', fetchNvd(since, keys.nvdApiKey)],
     ['CISA KEV', fetchKev(since)],
+    ['Anthropic', fetchAnthropic(since)],
     ...RSS_FEEDS.map((f): [string, Promise<Item[]>] => [f.name, fetchFeed(f, since)]),
   ];
   const results = await Promise.allSettled(jobs.map(([, p]) => p));

@@ -11,12 +11,14 @@ A Slack bot for developers. It watches security advisories and tech news for the
 | Nginx / web server | nginx, NGINX Plus |
 | GitHub / GitLab | GitHub (incl. Enterprise Server, Actions), GitLab |
 | Cloud | AWS (security bulletins), plus Azure, Google Cloud, Cloudflare mentions |
+| AI models & tools | New models and capabilities from Anthropic (Claude), OpenAI (ChatGPT / GPT), Google (Gemini, DeepMind), open-weight models (Hugging Face), and developer AI tools and workflows (Copilot, Cursor, Claude Code, MCP); security issues in AI tools get their own *AI tools vulnerability* category |
 
 On top of those, news is also grouped as *exploited in the wild*, *supply chain*, *breach / malware*,
 *release / update* and *tech news*. The bot:
 
 - posts **critical** items to Slack straight away (e.g. a PHP or Next.js remote code execution bug,
-  or anything in your stack on CISA's actively-exploited list), and
+  or anything in your stack on CISA's actively-exploited list). Alerts aren't repeated in the digest;
+  only criticals beyond the 5-per-poll cap go there instead. And it
 - posts **one daily digest at 10:00 IST** with everything else, grouped by priority (🔴 critical, 🟠 high,
   🟡 medium, 🟢 low) and then by category.
 
@@ -51,6 +53,7 @@ alerts already posted are never sent again.
 | Node.js security, php.net, Python Insider, Django, PostgreSQL, nginx.org, GitLab security releases, AWS security bulletins | Official security releases |
 | The Hacker News, BleepingComputer, GitHub Security Blog | Security news |
 | Laravel News, Node.js / React / Angular / MongoDB blogs, HN front page (300+ pts) | Dev and tech news |
+| Anthropic news (via its sitemap: no RSS), OpenAI, Google AI, Google DeepMind, Hugging Face, GitHub AI & ML, Simon Willison, Latent Space, TechCrunch AI | AI models, benchmarks and developer AI tools |
 
 **Priority rules** (deterministic, so alerts still work if Gemini is down). They live in `src/pipeline/score.ts`:
 
@@ -65,7 +68,12 @@ alerts already posted are never sent again.
 - When CISA adds a CVE to KEV, the bot looks up the GitHub advisory for that CVE, so a package
   vulnerability is recognised as in-stack even when the KEV text never mentions npm or PHP.
 - An item matching several areas gets the first one in the table above (e.g. "PHP app on AWS" → PHP).
-- Gemini writes the summaries. For **news only**, it can change the category, raise the priority by one
+- AI posts: launches, new capabilities and benchmark results are medium; other AI posts are low. Gemini
+  summarises what launched, its key capabilities, benchmark scores **only when the article states them**,
+  and how to try it, and filters out funding / IPO / lawsuit stories.
+- Gemini writes the summaries and ends each with a concrete next step, e.g. "Upgrade laravel/framework to
+  13.29.0 or later".
+- For **news only**, Gemini can also change the category, raise the priority by one
   level, or drop promotional posts. It never changes a vulnerability's priority.
 
 ## Cost: $0

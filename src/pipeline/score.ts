@@ -65,6 +65,7 @@ function newsCategory(item: Item, stack: Stack | undefined): Category {
     return `vuln-${stack}`;
   }
   if (SIGNALS.breachMalware.test(t)) return 'breach-malware';
+  if (item.feedKind === 'ai-news' || stack === 'ai') return 'ai-update';
   if (item.feedKind === 'release' || (item.feedKind === 'dev-news' && SIGNALS.release.test(t))) {
     return 'release-update';
   }
@@ -84,6 +85,7 @@ function scoreNews(item: Item): ScoredItem {
     if (stack && (severe || category === 'supply-chain')) priority = 'high';
     else if (stack || category === 'supply-chain' || SIGNALS.exploited.test(t)) priority = 'medium';
   }
+  if (category === 'ai-update' && priority === 'low' && SIGNALS.aiLaunch.test(t)) priority = 'medium';
   return { ...item, priority, category };
 }
 

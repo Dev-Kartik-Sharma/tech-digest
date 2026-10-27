@@ -1,6 +1,6 @@
 import Parser from 'rss-parser';
 import type { FeedSource } from '../config/sources.js';
-import { extractCves, SNIPPET_MAX, stripHtml, toIso, truncate, urlId } from '../pipeline/normalize.js';
+import { AI_SNIPPET_MAX, extractCves, SNIPPET_MAX, stripHtml, toIso, truncate, urlId } from '../pipeline/normalize.js';
 import type { Item } from '../types.js';
 import { fetchText } from './http.js';
 
@@ -18,7 +18,7 @@ export async function parseFeed(xml: string, feed: FeedSource): Promise<Item[]> 
       const title = stripHtml(e.title!);
       const snippet = truncate(
         stripHtml(e.contentSnippet ?? e.summary ?? e.content ?? '').replace(HN_BOILERPLATE, '').trim(),
-        SNIPPET_MAX,
+        feed.kind === 'ai-news' ? AI_SNIPPET_MAX : SNIPPET_MAX,
       );
       const id = urlId(url);
       const mentions = extractCves(`${title} ${snippet}`);

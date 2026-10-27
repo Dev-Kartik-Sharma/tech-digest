@@ -17,9 +17,11 @@ const CATEGORY_LABEL: Record<Category, string> = {
   'vuln-web-server': 'Nginx / web server vulnerability',
   'vuln-devops': 'GitHub / GitLab vulnerability',
   'vuln-cloud': 'Cloud (AWS & co.) vulnerability',
+  'vuln-ai': 'AI tools vulnerability',
   'exploited-in-wild': 'Exploited in the wild',
   'supply-chain': 'Supply chain',
   'breach-malware': 'Breach / malware',
+  'ai-update': 'AI models & tools',
   'release-update': 'Release / update',
   'tech-news': 'Tech news',
 };
@@ -36,7 +38,7 @@ const context = (text: string) => ({ type: 'context', elements: [{ type: 'mrkdwn
 
 export function formatCritical(item: ScoredItem, { escalated = false } = {}): SlackPayload {
   const title = truncate(item.title, 200);
-  const label = `${EMOJI.critical} CRITICAL · ${CATEGORY_LABEL[item.category]}${escalated ? ' · ⬆️ escalated' : ''}`;
+  const label = `${EMOJI.critical} CRITICAL · ${escapeMrkdwn(CATEGORY_LABEL[item.category])}${escalated ? ' · ⬆️ escalated' : ''}`;
   const facts = [
     item.cvss !== undefined ? `*CVSS ${item.cvss.toFixed(1)}*` : undefined,
     item.kev ? '*Actively exploited (CISA KEV)*' : undefined,
@@ -137,7 +139,7 @@ export function formatDigest(
     for (const category of CATEGORIES) {
       const lines = shown.filter((i) => i.category === category).map((i) => digestLine(i, now));
       if (!lines.length) continue;
-      for (const text of packSections(`*${CATEGORY_LABEL[category]}*`, lines)) {
+      for (const text of packSections(`*${escapeMrkdwn(CATEGORY_LABEL[category])}*`, lines)) {
         candidates.push({ block: section(text), lines: text.split('\n• ').length - 1 + (text.startsWith('• ') ? 1 : 0) });
       }
     }
