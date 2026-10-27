@@ -92,24 +92,6 @@ alerts already posted are never sent again.
 - For **news only**, Gemini can also change the category, raise the priority by one
   level, or drop promotional posts. It never changes a vulnerability's priority.
 
-## Cost: $0
-
-| | Public repo | Private repo (Free plan) |
-|---|---|---|
-| Actions minutes | unlimited, free | 2,000 / month included. This bot uses ~1,100–1,500 (~36 runs/day, ~1–1.5 min each) |
-| Gemini AI Studio free tier | ≤ ~36 requests / day | same |
-| cron-job.org | free | same |
-The state file holds only public advisory and news data, so a public repo is fine.
-
-**Good to know**
-- GitHub's own cron is best-effort and on this repo it skipped most runs, which is why an external
-  scheduler is the main trigger. Because every run is `auto`, it doesn't matter which trigger fires, or
-  if one is missed: the next run catches up, and the brief still goes out exactly once a day.
-- GitHub disables the backup **schedule** in public repos after 60 days without repository activity
-  (you'll get an email). The cron-job.org trigger keeps working regardless.
-- On Gemini's free tier, Google may use prompts to improve its products. The bot only sends public
-  headlines and advisories.
-
 ## Setup
 
 ### 1. Keys (all free)
