@@ -185,13 +185,14 @@ function card(item) {
         ),
       )
     : null;
+  // the title link stretches over the whole card (see .card-title a::after), so anywhere opens the source
   const title = item.url
-    ? h('a', { href: item.url, target: '_blank', rel: 'noopener noreferrer' }, item.title)
+    ? h('a', { href: item.url, target: '_blank', rel: 'noopener noreferrer' }, item.title, h('span', { class: 'ext', 'aria-hidden': 'true' }, ' ↗'))
     : h('span', {}, item.title);
 
   return h(
     'article',
-    { class: `card p-${item.priority}` },
+    { class: `card p-${item.priority}${item.url ? ' linked' : ''}` },
     h(
       'div',
       { class: 'card-meta' },
@@ -206,7 +207,9 @@ function card(item) {
     h(
       'div',
       { class: 'card-foot' },
-      h('span', {}, item.source),
+      item.url
+        ? h('a', { class: 'read-more', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, `Read on ${item.source} ↗`)
+        : h('span', {}, item.source),
       h('span', {}, shortDate(item.publishedAt)),
       item.ids?.length ? h('span', { class: 'ids' }, item.ids.join(' · ')) : null,
     ),

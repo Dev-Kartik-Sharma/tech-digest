@@ -378,6 +378,51 @@ a {
   box-shadow: var(--shadow);
 }
 
+/* clickable cards: the title link's ::after covers the card */
+.card {
+  position: relative;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.card.linked:hover,
+.card.linked:focus-within {
+  box-shadow: 0 0 0 1px var(--brand), var(--shadow);
+}
+
+.card.linked:hover {
+  transform: translateY(-1px);
+}
+
+.card-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* things inside the card that need their own clicks / text selection sit above the stretched link */
+.card details,
+.card .card-foot {
+  position: relative;
+  z-index: 1;
+}
+
+.card-title .ext {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.read-more {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.read-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -429,10 +474,8 @@ a {
   text-decoration: none;
 }
 
-.card-title a:hover {
+.card.linked:hover .card-title a {
   color: var(--brand);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .summary {
