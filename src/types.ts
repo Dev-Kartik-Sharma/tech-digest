@@ -73,4 +73,6 @@ export interface ScoredItem extends Item {
   summary?: string;
   /** Why Gemini bumped the priority, if it did. */
   bumpReason?: string;
+  /** When the instant Slack alert went out (criticals only); the daily brief doesn't repeat these. */
+  alertedAt?: string;
 }

@@ -1,6 +1,6 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FileStore } from '../src/store/file-store.js';
 import type { ScoredItem } from '../src/types.js';
@@ -49,6 +49,32 @@ describe('FileStore', () => {
     await store.setLastDigestDate('2026-10-27');
     await store.save();
     expect(await (await FileStore.load(path, NOW)).getLastDigestDate()).toBe('2026-10-27');
+  });
+
+  it('archives days as separate files, newest first, merging a second archive of the same day', async () => {
+    const path = tmpFile();
+    const store = await FileStore.load(path, NOW);
+    await store.saveDay({ date: '2026-10-26', generatedAt: '2026-10-26T05:00:00Z', items: [item('A')] });
+    await store.saveDay({ date: '2026-10-27', generatedAt: '2026-10-27T05:00:00Z', items: [item('B')] });
+    await store.saveDay({ date: '2026-10-27', generatedAt: '2026-10-27T09:00:00Z', items: [item('C'), item('B')] });
+    await store.save();
+    expect(existsSync(join(dirname(path), 'days', '2026-10-27.json'))).toBe(true);
+
+    const days = await (await FileStore.load(path, NOW)).listDays();
+    expect(days.map((d) => d.date)).toEqual(['2026-10-27', '2026-10-26']);
+    expect(days[0]?.items.map((i) => i.id).sort()).toEqual(['B', 'C']);
+    expect(days[0]?.generatedAt).toBe('2026-10-27T09:00:00Z');
+  });
+
+  it('prunes old days and deletes their files', async () => {
+    const path = tmpFile();
+    const store = await FileStore.load(path, NOW);
+    for (const d of ['2026-10-25', '2026-10-26', '2026-10-27']) await store.saveDay({ date: d, generatedAt: NOW.toISOString(), items: [] });
+    await store.save();
+    await store.pruneDays(2);
+    await store.save();
+    expect((await store.listDays()).map((d) => d.date)).toEqual(['2026-10-27', '2026-10-26']);
+    expect(existsSync(join(dirname(path), 'days', '2026-10-25.json'))).toBe(false);
   });
 
   it('deletes pending entries by key', async () => {

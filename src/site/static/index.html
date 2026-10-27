@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Sentinel brief</title>
+    <meta name="description" content="Daily tech, security and AI brief for developers." />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#list">Skip to updates</a>
+
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <a class="brand" href="./">
+          <img src="icon.svg" alt="" width="36" height="36" />
+          <span class="brand-text"><strong>Sentinel</strong><small>Daily tech &amp; security brief</small></span>
+        </a>
+        <nav class="daynav" aria-label="Choose day">
+          <button id="prev" class="icon-btn" type="button" aria-label="Previous day">‹</button>
+          <select id="day" aria-label="Day"></select>
+          <button id="next" class="icon-btn" type="button" aria-label="Next day">›</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="intro">
+        <h1 id="heading">Loading…</h1>
+        <p id="updated" class="muted"></p>
+      </section>
+
+      <section id="tiles" class="tiles" aria-label="Filter by priority"></section>
+
+      <section class="filters" aria-label="Filters">
+        <input id="search" type="search" placeholder="Search titles, summaries, CVE ids, packages…" aria-label="Search" autocomplete="off" />
+        <div id="chips" class="chips" role="group" aria-label="Filter by topic"></div>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div id="list"></div>
+    </main>
+
+    <footer class="wrap footer">
+      Sentinel watches GitHub security advisories, NVD, CISA's actively-exploited list, vendor security feeds,
+      security news and AI labs. Critical items are also alerted instantly in Slack.
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

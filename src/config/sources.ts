@@ -161,6 +161,7 @@ export const LIMITS = {
   geminiBatchSize: 30,
   geminiMaxCallsPerRun: 3,
   seenTtlDays: 45,
-  digestCaps: { critical: 10, high: 15, medium: 12, low: 8 },
+  /** Days of briefs kept on the web page. */
+  daysKept: 30,
   fetchTimeoutMs: 15_000,
 };

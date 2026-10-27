@@ -161,6 +161,14 @@ describe('parseFeed', () => {
     for (const i of items) expect(i.aliases).toEqual([i.id]);
   });
 
+  it('drops placeholder descriptions like AWS bulletins\' "Read this article"', async () => {
+    const xml = `<?xml version="1.0"?><rss version="2.0"><channel><title>AWS</title>
+      <item><title>CVE-2026-1 - Issue in X</title><link>https://aws.amazon.com/security/security-bulletins/x/</link>
+      <description>Read this article</description><pubDate>Mon, 26 Oct 2026 10:00:00 +0000</pubDate></item></channel></rss>`;
+    const [item] = await parseFeed(xml, { name: 'AWS Security Bulletins', url: 'x', kind: 'release', stack: 'cloud' });
+    expect(item?.snippet).toBe('');
+  });
+
   it('strips Hacker News link boilerplate from snippets', async () => {
     const xml = `<?xml version="1.0"?><rss version="2.0"><channel><title>HN</title>
       <item><title>Show HN: thing</title><link>https://example.com/t</link>

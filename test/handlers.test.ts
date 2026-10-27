@@ -58,8 +58,11 @@ describe('runPoll', () => {
     const stats = await runPoll(d);
     expect(posts).toHaveLength(1);
     expect(posts[0]?.text).toMatch(/CRITICAL.*PHP remote code execution #1/);
-    const pending = (await store.listPending()).map((e) => e.item.id).sort();
-    expect(pending).toEqual(['GHSA-med']); // an alerted critical is not repeated in the digest
+    const pending = await store.listPending();
+    expect(pending.map((e) => e.item.id).sort()).toEqual(['CVE-2026-1001', 'GHSA-med']);
+    // the alerted critical stays in the day's record, marked so the Slack brief doesn't repeat it
+    expect(pending.find((e) => e.item.id === 'CVE-2026-1001')?.item.alertedAt).toBe(NOW.toISOString());
+    expect(pending.find((e) => e.item.id === 'GHSA-med')?.item.alertedAt).toBeUndefined();
     expect(stats).toMatchObject({ fetched: 2, fresh: 2, alerted: 1 });
 
     await runPoll(d);
@@ -71,8 +74,9 @@ describe('runPoll', () => {
     const { d, posts, store } = deps(items);
     await runPoll(d);
     expect(posts).toHaveLength(5);
-    // only the 3 that weren't alerted go to the digest
-    expect((await store.listPending()).filter((e) => e.item.priority === 'critical')).toHaveLength(3);
+    const criticals = (await store.listPending()).filter((e) => e.item.priority === 'critical');
+    expect(criticals).toHaveLength(8);
+    expect(criticals.filter((e) => e.item.alertedAt)).toHaveLength(5);
   });
 
   it('does not mark an alert as seen when Slack fails, so the next run retries it', async () => {
@@ -218,30 +222,36 @@ describe('runPoll: review fixes', () => {
 });
 
 describe('runDigest', () => {
-  it('posts one digest with everything pending and clears it', async () => {
+  const SITE = 'https://example.github.io/repo/';
+
+  it("archives the day's items, clears the queue, and returns the Slack brief", async () => {
     const { d, store } = deps([phpRce(1), mediumNpm]);
     await runPoll(d);
-    const posts: SlackPayload[] = [];
-    const res = await runDigest({ store, post: async (p) => void posts.push(p), now: NOW, timeZone: 'UTC' });
-    expect(res.posted).toBe(1);
-    expect(posts).toHaveLength(1);
-    expect(posts[0]?.text).toMatch(/2026-10-26.*1 medium/);
-    expect(posts[0]?.text).not.toMatch(/critical/);
+    const res = await runDigest({ store, now: NOW, timeZone: 'UTC', siteUrl: SITE });
+    expect(res.date).toBe('2026-10-26');
+    expect(res.items.map((i) => i.id).sort()).toEqual(['CVE-2026-1001', 'GHSA-med']);
+    expect(res.brief?.text).toMatch(/2026-10-26/);
+    expect(JSON.stringify(res.brief)).toContain(`${SITE}?day=2026-10-26`);
+    const [day] = await store.listDays();
+    expect(day).toMatchObject({ date: '2026-10-26', generatedAt: NOW.toISOString() });
+    expect(day?.items).toHaveLength(2);
     expect(await store.listPending()).toEqual([]);
+    expect(await store.getLastDigestDate()).toBe('2026-10-26');
   });
 
-  it('posts nothing on a quiet day', async () => {
-    const posts: SlackPayload[] = [];
-    await runDigest({ store: new MemoryStore(), post: async (p) => void posts.push(p), now: NOW, timeZone: 'UTC' });
-    expect(posts).toHaveLength(0);
+  it('prunes the archive to the number of days kept', async () => {
+    const store = new MemoryStore();
+    for (const date of ['2026-10-20', '2026-10-21', '2026-10-22']) await store.saveDay({ date, generatedAt: '', items: [] });
+    await store.addPending([{ ...mediumNpm, priority: 'medium', category: 'vuln-js' }]);
+    await runDigest({ store, now: NOW, timeZone: 'UTC', siteUrl: SITE, daysKept: 2 });
+    expect((await store.listDays()).map((d) => d.date)).toEqual(['2026-10-26', '2026-10-22']);
   });
 
-  it('keeps pending items when posting fails', async () => {
-    const { d, store } = deps([mediumNpm]);
-    await runPoll(d);
-    await expect(
-      runDigest({ store, post: async () => Promise.reject(new Error('down')), now: NOW, timeZone: 'UTC' }),
-    ).rejects.toThrow('down');
-    expect(await store.listPending()).toHaveLength(1);
+  it('archives nothing and returns no brief on a quiet day, but still counts the day as done', async () => {
+    const store = new MemoryStore();
+    const res = await runDigest({ store, now: NOW, timeZone: 'UTC', siteUrl: SITE });
+    expect(res.brief).toBeNull();
+    expect(await store.listDays()).toEqual([]);
+    expect(await store.getLastDigestDate()).toBe('2026-10-26');
   });
 });

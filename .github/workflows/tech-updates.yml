@@ -17,6 +17,8 @@ on:
 
 permissions:
   contents: write # push the state branch
+  pages: write # deploy the brief page
+  id-token: write # required by actions/deploy-pages
 
 # one run at a time, so two runs never write the state file at once
 concurrency:
@@ -31,6 +33,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      # set when this run published a day's brief (see src/main.ts)
+      digest: ${{ steps.run.outputs.digest }}
     steps:
       - uses: actions/checkout@v7
 
@@ -50,7 +55,8 @@ jobs:
           set -e
           if [ "$status" -eq 0 ]; then
             git fetch --depth=1 origin "$STATE_BRANCH"
-            git show FETCH_HEAD:state.json > "$STATE_FILE"
+            # state.json plus days/<date>.json (the archived briefs the page is built from)
+            git archive FETCH_HEAD | tar -x -C state
           elif [ "$status" -eq 2 ]; then
             echo "No $STATE_BRANCH branch yet: first run starts with empty state"
           else
@@ -59,6 +65,7 @@ jobs:
           fi
 
       - name: Run
+        id: run
         env:
           COMMAND: ${{ inputs.command || 'auto' }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -68,6 +75,10 @@ jobs:
           DIGEST_TIMEZONE: ${{ vars.DIGEST_TIMEZONE || 'Asia/Kolkata' }}
           DIGEST_AFTER: ${{ vars.DIGEST_AFTER || '10:00' }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-lite-latest' }}
+          DAYS_KEPT: ${{ vars.DAYS_KEPT || '30' }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_DIR: site
+          ANNOUNCE_FILE: announce.json
         run: npx tsx src/main.ts "$COMMAND"
 
       # Runs even if the step above failed: alerts already posted must stay marked as seen.
@@ -79,7 +90,7 @@ jobs:
         run: |
           cd state
           git init -q -b "$STATE_BRANCH"
-          git add state.json
+          git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "bot state $(date -u +%FT%TZ)"
           # a lost save means the next run re-alerts, so retry transient push failures
@@ -88,3 +99,42 @@ jobs:
             echo "push attempt $attempt failed"; sleep $((attempt * 10))
           done
           exit 1
+
+      - name: Upload brief page
+        if: steps.run.outputs.digest != ''
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Upload Slack brief
+        if: steps.run.outputs.digest != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: slack-brief
+          path: announce.json
+          retention-days: 7
+
+  # Deploys the page first and only then posts the Slack brief, so its button never points at a page
+  # that isn't live yet. If this job fails, re-run it from the Actions tab: the artifacts are kept.
+  publish:
+    needs: run
+    if: needs.run.outputs.digest != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: slack-brief
+
+      - name: Post Slack brief
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -sS --fail-with-body --retry 3 --retry-all-errors \
+            -H 'Content-Type: application/json' --data @announce.json "$SLACK_WEBHOOK_URL"

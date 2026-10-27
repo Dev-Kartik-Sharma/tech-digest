@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { LIMITS } from './config/sources.js';
 import { geminiGenerate } from './pipeline/enrich-gemini.js';
 import type { SlackPayload } from './slack/format.js';
 import { postToSlack } from './slack/post.js';
@@ -8,7 +9,8 @@ import type { Item } from './types.js';
 /**
  * Builds runtime dependencies from env vars (or ./.env when present):
  * SLACK_WEBHOOK_URL (required unless dryRun), GEMINI_API_KEY, GITHUB_TOKEN, NVD_API_KEY, GEMINI_MODEL,
- * DIGEST_TIMEZONE (default UTC), DIGEST_AFTER (local HH:MM the daily digest may go out, default 10:00).
+ * DIGEST_TIMEZONE (default UTC), DIGEST_AFTER (local HH:MM the daily digest may go out, default 10:00),
+ * SITE_URL (brief page; default https://<owner>.github.io/<repo>/ from GITHUB_REPOSITORY), DAYS_KEPT.
  */
 export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
   if (existsSync('.env')) process.loadEnvFile('.env');
@@ -23,6 +25,9 @@ export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
   const digestAfter = env('DIGEST_AFTER') ?? '10:00';
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(digestAfter)) throw new Error(`DIGEST_AFTER must be HH:MM (24h), got "${digestAfter}"`);
 
+  const daysKept = Number(env('DAYS_KEPT') ?? LIMITS.daysKept);
+  if (!Number.isInteger(daysKept) || daysKept < 1) throw new Error(`DAYS_KEPT must be a positive integer`);
+
   const githubToken = env('GITHUB_TOKEN');
   const nvdApiKey = env('NVD_API_KEY');
   return {
@@ -35,5 +40,18 @@ export function depsFromEnv({ dryRun }: { dryRun: boolean }) {
     },
     timeZone: env('DIGEST_TIMEZONE') ?? 'UTC',
     digestAfter,
+    siteUrl: siteUrl(env('SITE_URL'), env('GITHUB_REPOSITORY')),
+    daysKept,
   };
 }
+
+/** Explicit SITE_URL, else the repo's GitHub Pages address, else a local preview address. */
+export function siteUrl(explicit: string | undefined, repository: string | undefined): string {
+  const url = explicit ?? (repository?.includes('/') ? githubPagesUrl(repository) : 'http://localhost:8080/');
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
+const githubPagesUrl = (repository: string) => {
+  const [owner, repo] = repository.split('/');
+  return `https://${owner!.toLowerCase()}.github.io/${repo}/`;
+};

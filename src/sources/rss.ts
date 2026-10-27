@@ -8,6 +8,8 @@ const parser = new Parser();
 
 /** hnrss.org descriptions are just links and counters. */
 const HN_BOILERPLATE = /(Article URL|Comments URL):\s*\S+|Points:\s*\d+|#\s*Comments:\s*\d+/g;
+/** Descriptions that say nothing (AWS security bulletins use "Read this article"). */
+const PLACEHOLDER = /^(read (this|the full|more)( article| story| post)?|continue reading|more)\W*$/i;
 
 export async function parseFeed(xml: string, feed: FeedSource): Promise<Item[]> {
   const parsed = await parser.parseString(xml);
@@ -17,7 +19,7 @@ export async function parseFeed(xml: string, feed: FeedSource): Promise<Item[]> 
       const url = e.link!;
       const title = stripHtml(e.title!);
       const snippet = truncate(
-        stripHtml(e.contentSnippet ?? e.summary ?? e.content ?? '').replace(HN_BOILERPLATE, '').trim(),
+        stripHtml(e.contentSnippet ?? e.summary ?? e.content ?? '').replace(HN_BOILERPLATE, '').trim().replace(PLACEHOLDER, ''),
         feed.kind === 'ai-news' ? AI_SNIPPET_MAX : SNIPPET_MAX,
       );
       const id = urlId(url);

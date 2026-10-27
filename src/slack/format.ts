@@ -1,15 +1,16 @@
-import { LIMITS } from '../config/sources.js';
 import { truncate } from '../pipeline/normalize.js';
 import { CATEGORIES, PRIORITIES, type Category, type Priority, type ScoredItem } from '../types.js';
 
 export interface SlackPayload {
   text: string;
   blocks: Record<string, unknown>[];
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
 }
 
 const EMOJI: Record<Priority, string> = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' };
 
-const CATEGORY_LABEL: Record<Category, string> = {
+export const CATEGORY_LABEL: Record<Category, string> = {
   'vuln-php': 'PHP vulnerability',
   'vuln-js': 'JS / Node vulnerability',
   'vuln-python': 'Python vulnerability',
@@ -26,9 +27,6 @@ const CATEGORY_LABEL: Record<Category, string> = {
   'tech-news': 'Tech news',
 };
 
-const MAX_BLOCKS = 50;
-const MAX_SECTION_CHARS = 2900;
-
 export const escapeMrkdwn = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const link = (url: string, title: string) => `<${url}|${escapeMrkdwn(title).replace(/\|/g, '¦')}>`;
@@ -36,7 +34,7 @@ const link = (url: string, title: string) => `<${url}|${escapeMrkdwn(title).repl
 const section = (text: string) => ({ type: 'section', text: { type: 'mrkdwn', text } });
 const context = (text: string) => ({ type: 'context', elements: [{ type: 'mrkdwn', text }] });
 
-export function formatCritical(item: ScoredItem, { escalated = false } = {}): SlackPayload {
+export function formatCritical(item: ScoredItem, { escalated = false, siteUrl }: { escalated?: boolean; siteUrl?: string } = {}): SlackPayload {
   const title = truncate(item.title, 200);
   const label = `${EMOJI.critical} CRITICAL · ${escapeMrkdwn(CATEGORY_LABEL[item.category])}${escalated ? ' · ⬆️ escalated' : ''}`;
   const facts = [
@@ -53,32 +51,16 @@ export function formatCritical(item: ScoredItem, { escalated = false } = {}): Sl
     section(`*${link(item.url, title)}*\n${escapeMrkdwn(truncate(item.summary ?? item.snippet, 600))}`),
     ...(facts.length ? [context(facts.join('  ·  '))] : []),
     ...(pkgs.length ? [section(`*Affected ${item.ecosystem === 'core' ? 'versions' : 'packages'}*\n${pkgs.join('\n')}`)] : []),
-    context(`Source: ${escapeMrkdwn(item.source)}${item.bumpReason ? ` · bumped: ${escapeMrkdwn(item.bumpReason)}` : ''}`),
+    context(
+      `Source: ${escapeMrkdwn(item.source)}${item.bumpReason ? ` · bumped: ${escapeMrkdwn(item.bumpReason)}` : ''}` +
+        (siteUrl ? ` · <${siteUrl}|Sentinel brief page →>` : ''),
+    ),
   ];
-  return { text: `${label}: ${escapeMrkdwn(title)}`, blocks };
-}
-
-const OLD_AFTER_MS = 2 * 86_400_000;
-const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-
-function digestLine(item: ScoredItem, now: Date): string {
-  // most items are from the last day; flag the few that aren't (e.g. NVD finishing an older CVE)
-  const old = now.getTime() - new Date(item.publishedAt).getTime() > OLD_AFTER_MS;
-  const extra = [
-    item.cvss !== undefined ? `CVSS ${item.cvss.toFixed(1)}` : '',
-    item.kev ? 'KEV' : '',
-    old ? `published ${shortDate.format(new Date(item.publishedAt))}` : '',
-  ]
-    .filter(Boolean)
-    .join(', ');
-  // long enough to keep the summary's closing "Upgrade X to Y" step
-  const summary = truncate(item.summary ?? item.snippet, 240);
-  const fix = fixNote(item);
-  return `• ${link(item.url, truncate(item.title, 120))}${extra ? ` (${extra})` : ''}${fix ? ` · *${escapeMrkdwn(fix)}*` : ''}${summary ? ` — ${escapeMrkdwn(summary)}` : ''} · _${escapeMrkdwn(item.source)}_`;
+  return { text: `${label}: ${escapeMrkdwn(title)}`, blocks, unfurl_links: false, unfurl_media: false };
 }
 
 /** "fix: laravel/framework 13.29.0" / "no fix yet" for vulnerabilities with version info. */
-function fixNote(item: ScoredItem): string {
+export function fixNote(item: ScoredItem): string {
   if (item.kind !== 'vuln' || !item.packages?.length) return '';
   const fixed = item.packages.find((p) => p.patched);
   if (!fixed) return 'no fix yet';
@@ -96,69 +78,68 @@ function fairShare(items: ScoredItem[], cap: number): ScoredItem[] {
   return out;
 }
 
-/** Packs lines into as few ≤ MAX_SECTION_CHARS sections as possible. */
-function packSections(heading: string, lines: string[]): string[] {
-  const out: string[] = [];
-  let current = heading;
-  for (const line of lines) {
-    if (current.length + line.length + 1 > MAX_SECTION_CHARS) {
-      out.push(current);
-      current = line;
-    } else {
-      current += `\n${line}`;
-    }
-  }
-  out.push(current);
-  return out;
-}
+/** Short tech-area tags for one-line brief entries. */
+const AREA: Record<Category, string> = {
+  'vuln-php': 'PHP',
+  'vuln-js': 'JS',
+  'vuln-python': 'Python',
+  'vuln-database': 'DB',
+  'vuln-web-server': 'Nginx',
+  'vuln-devops': 'GitHub/GitLab',
+  'vuln-cloud': 'Cloud',
+  'vuln-ai': 'AI tools',
+  'exploited-in-wild': 'Exploited',
+  'supply-chain': 'Supply chain',
+  'breach-malware': 'Breach',
+  'ai-update': 'AI',
+  'release-update': 'Release',
+  'tech-news': 'Tech',
+};
 
-export function formatDigest(
-  items: ScoredItem[],
-  date: string,
-  caps: Partial<Record<Priority, number>> = LIMITS.digestCaps,
-  now = new Date(),
-): SlackPayload | null {
+const TOP_ITEMS = 5;
+
+/** Vulnerabilities with a known fix first (actionable), then by CVSS. */
+const actionableFirst = (a: ScoredItem, b: ScoredItem) =>
+  Number(fixNote(b).startsWith('fix:')) - Number(fixNote(a).startsWith('fix:')) || (b.cvss ?? 0) - (a.cvss ?? 0);
+
+const dayLabel = (date: string) =>
+  new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+    .format(new Date(`${date}T12:00:00Z`))
+    .replace(',', '');
+
+/**
+ * The once-a-day Slack message: counts, the top few items, and a button to the full brief page.
+ * Criticals that were already alerted are only counted.
+ */
+export function formatBrief(items: ScoredItem[], date: string, siteUrl: string): SlackPayload | null {
   if (!items.length) return null;
 
-  const counts = PRIORITIES.map((p) => [p, items.filter((i) => i.priority === p).length] as const).filter(([, n]) => n);
-  const summaryText = counts.map(([p, n]) => `${n} ${p}`).join(' · ');
+  const counts = PRIORITIES.map((p) => {
+    const ofP = items.filter((i) => i.priority === p);
+    if (!ofP.length) return '';
+    const alerted = ofP.filter((i) => i.alertedAt).length;
+    const note = !alerted ? '' : alerted === ofP.length ? ' (already alerted)' : ` (${alerted} already alerted)`;
+    return `${EMOJI[p]} ${ofP.length} ${p}${note}`;
+  }).filter(Boolean);
 
-  // every block remembers how many item lines it carries, so truncation can be reported
-  const candidates: { block: Record<string, unknown>; lines: number }[] = [];
-  let selected = 0;
-  for (const priority of PRIORITIES) {
-    const all = items
-      .filter((i) => i.priority === priority)
-      .sort((a, b) => (b.cvss ?? 0) - (a.cvss ?? 0) || b.publishedAt.localeCompare(a.publishedAt));
-    if (!all.length) continue;
-    const shown = fairShare(all, caps[priority] ?? Infinity);
-    selected += shown.length;
+  const unalertedCriticals = items.filter((i) => i.priority === 'critical' && !i.alertedAt).sort(actionableFirst);
+  const highs = items.filter((i) => i.priority === 'high').sort(actionableFirst);
+  const top = [...unalertedCriticals, ...fairShare(highs, TOP_ITEMS)].slice(0, TOP_ITEMS);
+  const lines = top.map((i) => {
+    const fix = fixNote(i);
+    return `• ${i.priority === 'critical' ? '🔴 ' : ''}${AREA[i.category]} · ${link(i.url, truncate(i.title, 110))}${fix ? ` · ${escapeMrkdwn(fix)}` : ''}`;
+  });
 
-    candidates.push({ block: { type: 'divider' }, lines: 0 });
-    candidates.push({ block: section(`*${EMOJI[priority]} ${priority.toUpperCase()}*`), lines: 0 });
-    for (const category of CATEGORIES) {
-      const lines = shown.filter((i) => i.category === category).map((i) => digestLine(i, now));
-      if (!lines.length) continue;
-      for (const text of packSections(`*${escapeMrkdwn(CATEGORY_LABEL[category])}*`, lines)) {
-        candidates.push({ block: section(text), lines: text.split('\n• ').length - 1 + (text.startsWith('• ') ? 1 : 0) });
-      }
-    }
-    if (all.length > shown.length) {
-      candidates.push({ block: context(`…and ${all.length - shown.length} more ${priority} items`), lines: 0 });
-    }
-  }
-
+  const title = `🛡️ Sentinel brief · ${dayLabel(date)}`;
   const blocks: Record<string, unknown>[] = [
-    { type: 'header', text: { type: 'plain_text', text: `🛡️ Tech & Security Digest — ${date}` } },
-    context(summaryText),
+    section(`*${title}*\n${counts.join(' · ')}`),
+    ...(lines.length ? [section(`*Top ${unalertedCriticals.length ? 'items' : 'high-priority'}*\n${lines.join('\n')}`)] : []),
+    {
+      type: 'actions',
+      elements: [
+        { type: 'button', text: { type: 'plain_text', text: "Open today's brief →" }, url: `${siteUrl}?day=${date}`, style: 'primary' },
+      ],
+    },
   ];
-  const budget = MAX_BLOCKS - 1; // room for the "not shown" note
-  let included = 0;
-  for (const c of candidates) {
-    if (blocks.length >= budget) break;
-    blocks.push(c.block);
-    included += c.lines;
-  }
-  if (included < selected) blocks.push(context(`…${selected - included} more items not shown (Slack message limit)`));
-  return { text: `Tech & Security Digest ${date}: ${summaryText}`, blocks };
+  return { text: `Sentinel brief ${date}: ${counts.join(' · ')}`, blocks, unfurl_links: false, unfurl_media: false };
 }
