@@ -3,7 +3,7 @@
 # Sentinel
 
 A security and tech-news radar for developers, in Slack and on a daily web page.
-**Brief page:** https://dev-kartik-sharma.github.io/tech-updates-for-slack/
+**Brief page:** https://dev-kartik-sharma.github.io/tech-digest/
 
 <br clear="left" />
 

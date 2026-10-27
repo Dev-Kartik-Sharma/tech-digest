@@ -1,6 +1,6 @@
 import { LIMITS } from '../config/sources.js';
 
-const USER_AGENT = 'tech-updates-bot/0.1 (+https://github.com/Dev-Kartik-Sharma/tech-updates-for-slack)';
+const USER_AGENT = 'tech-updates-bot/0.1 (+https://github.com/Dev-Kartik-Sharma/tech-digest)';
 
 async function get(url: string, headers: Record<string, string>): Promise<Response> {
   const res = await fetch(url, {

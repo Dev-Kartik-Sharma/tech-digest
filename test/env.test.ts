@@ -3,9 +3,7 @@ import { siteUrl } from '../src/env.js';
 
 describe('siteUrl', () => {
   it('derives the GitHub Pages address from the repository, lower-casing the owner', () => {
-    expect(siteUrl(undefined, 'Dev-Kartik-Sharma/tech-updates-for-slack')).toBe(
-      'https://dev-kartik-sharma.github.io/tech-updates-for-slack/',
-    );
+    expect(siteUrl(undefined, 'Dev-Kartik-Sharma/tech-digest')).toBe('https://dev-kartik-sharma.github.io/tech-digest/');
   });
 
   it('prefers an explicit SITE_URL and adds a trailing slash', () => {

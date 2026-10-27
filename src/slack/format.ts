@@ -78,29 +78,11 @@ function fairShare(items: ScoredItem[], cap: number): ScoredItem[] {
   return out;
 }
 
-/** Short tech-area tags for one-line brief entries. */
-const AREA: Record<Category, string> = {
-  'vuln-php': 'PHP',
-  'vuln-js': 'JS',
-  'vuln-python': 'Python',
-  'vuln-database': 'DB',
-  'vuln-web-server': 'Nginx',
-  'vuln-devops': 'GitHub/GitLab',
-  'vuln-cloud': 'Cloud',
-  'vuln-ai': 'AI tools',
-  'exploited-in-wild': 'Exploited',
-  'supply-chain': 'Supply chain',
-  'breach-malware': 'Breach',
-  'ai-update': 'AI',
-  'release-update': 'Release',
-  'tech-news': 'Tech',
-};
+const TOP_CARDS = 3;
 
-const TOP_ITEMS = 5;
-
-/** Vulnerabilities with a known fix first (actionable), then by CVSS. */
-const actionableFirst = (a: ScoredItem, b: ScoredItem) =>
-  Number(fixNote(b).startsWith('fix:')) - Number(fixNote(a).startsWith('fix:')) || (b.cvss ?? 0) - (a.cvss ?? 0);
+/** Highest CVSS first, then vulnerabilities with a known fix (actionable). */
+const mostUrgent = (a: ScoredItem, b: ScoredItem) =>
+  (b.cvss ?? 0) - (a.cvss ?? 0) || Number(fixNote(b).startsWith('fix:')) - Number(fixNote(a).startsWith('fix:'));
 
 const dayLabel = (date: string) =>
   new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
@@ -108,38 +90,64 @@ const dayLabel = (date: string) =>
     .replace(',', '');
 
 /**
- * The once-a-day Slack message: counts, the top few items, and a button to the full brief page.
- * Criticals that were already alerted are only counted.
+ * The brief's featured items: the day's criticals (even if already alerted), topped up with High,
+ * then Medium. Without any critical, one slot goes to the top AI item so it isn't all vulnerabilities.
  */
+function pickCards(items: ScoredItem[]): ScoredItem[] {
+  const of = (p: Priority, skip?: ScoredItem) => items.filter((i) => i.priority === p && i !== skip).sort(mostUrgent);
+  // High before Medium; within each, spread across categories so one busy feed can't take every slot
+  const fill = (n: number, skip?: ScoredItem) => {
+    const highs = fairShare(of('high', skip), n);
+    return [...highs, ...fairShare(of('medium', skip), n - highs.length)];
+  };
+
+  const criticals = of('critical').slice(0, TOP_CARDS);
+  if (criticals.length) return [...criticals, ...fill(TOP_CARDS - criticals.length)];
+
+  const ai = [...of('high'), ...of('medium')].find((i) => i.category === 'ai-update');
+  return ai ? [...fill(TOP_CARDS - 1, ai), ai] : fill(TOP_CARDS);
+}
+
+/** One featured item, laid out like a critical alert: label, linked title, AI summary, key facts. */
+function briefCard(item: ScoredItem): Record<string, unknown>[] {
+  const facts = [
+    item.cvss !== undefined ? `*CVSS ${item.cvss.toFixed(1)}*` : '',
+    item.kev ? '*Actively exploited*' : '',
+    escapeMrkdwn(fixNote(item)),
+    escapeMrkdwn(item.source),
+  ].filter(Boolean);
+  return [
+    context(`*${EMOJI[item.priority]} ${item.priority.toUpperCase()} · ${escapeMrkdwn(CATEGORY_LABEL[item.category])}*`),
+    section(`*${link(item.url, truncate(item.title, 150))}*\n${escapeMrkdwn(truncate(item.summary ?? item.snippet, 350))}`),
+    context(facts.join('  ·  ')),
+  ];
+}
+
+/** The once-a-day Slack message: counts, up to 3 featured cards, and a button to the full brief page. */
 export function formatBrief(items: ScoredItem[], date: string, siteUrl: string): SlackPayload | null {
   if (!items.length) return null;
 
   const counts = PRIORITIES.map((p) => {
-    const ofP = items.filter((i) => i.priority === p);
-    if (!ofP.length) return '';
-    const alerted = ofP.filter((i) => i.alertedAt).length;
-    const note = !alerted ? '' : alerted === ofP.length ? ' (already alerted)' : ` (${alerted} already alerted)`;
-    return `${EMOJI[p]} ${ofP.length} ${p}${note}`;
+    const n = items.filter((i) => i.priority === p).length;
+    return n ? `${EMOJI[p]} ${n} ${p}` : '';
   }).filter(Boolean);
 
-  const unalertedCriticals = items.filter((i) => i.priority === 'critical' && !i.alertedAt).sort(actionableFirst);
-  const highs = items.filter((i) => i.priority === 'high').sort(actionableFirst);
-  const top = [...unalertedCriticals, ...fairShare(highs, TOP_ITEMS)].slice(0, TOP_ITEMS);
-  const lines = top.map((i) => {
-    const fix = fixNote(i);
-    return `• ${i.priority === 'critical' ? '🔴 ' : ''}${AREA[i.category]} · ${link(i.url, truncate(i.title, 110))}${fix ? ` · ${escapeMrkdwn(fix)}` : ''}`;
-  });
+  const cards = pickCards(items);
+  const more = items.length - cards.length;
+  const hasCritical = cards.some((i) => i.priority === 'critical');
 
-  const title = `🛡️ Sentinel brief · ${dayLabel(date)}`;
   const blocks: Record<string, unknown>[] = [
-    section(`*${title}*\n${counts.join(' · ')}`),
-    ...(lines.length ? [section(`*Top ${unalertedCriticals.length ? 'items' : 'high-priority'}*\n${lines.join('\n')}`)] : []),
+    section(`*🛡️ Sentinel brief · ${dayLabel(date)}*\n${counts.join(' · ')}`),
+    ...(cards.length ? [{ type: 'divider' }, section(`*${hasCritical ? 'Top critical' : 'Top picks'}*`)] : []),
+    ...cards.flatMap((c, i) => [...(i ? [{ type: 'divider' }] : []), ...briefCard(c)]),
+    { type: 'divider' },
     {
       type: 'actions',
       elements: [
         { type: 'button', text: { type: 'plain_text', text: "Open today's brief →" }, url: `${siteUrl}?day=${date}`, style: 'primary' },
       ],
     },
+    ...(more > 0 ? [context(`+${more} more updates on the brief page`)] : []),
   ];
   return { text: `Sentinel brief ${date}: ${counts.join(' · ')}`, blocks, unfurl_links: false, unfurl_media: false };
 }
