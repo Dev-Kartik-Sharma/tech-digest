@@ -22,6 +22,8 @@ export interface PageItem {
   cvss?: number;
   kev?: boolean;
   alerted?: boolean;
+  /** Why the AI held this critical back from an instant alert. */
+  held?: string;
   ids?: string[];
   fix?: string;
   affected?: { name: string; range?: string; patched?: string }[];
@@ -57,6 +59,7 @@ export function toPageItem(i: ScoredItem): PageItem {
     ...(i.cvss !== undefined ? { cvss: i.cvss } : {}),
     ...(i.kev ? { kev: true } : {}),
     ...(i.alertedAt ? { alerted: true } : {}),
+    ...(i.holdReason ? { held: i.holdReason } : {}),
     ...(ids.length ? { ids } : {}),
     ...(fix ? { fix } : {}),
     ...(affected.length ? { affected } : {}),

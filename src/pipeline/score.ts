@@ -15,6 +15,10 @@ export function detectStack(item: Item): Stack | undefined {
 
 const registry = (item: Item) => (item.ecosystem && item.ecosystem !== 'core' ? item.ecosystem : undefined);
 
+/** On CISA KEV or reported as exploited: always worth an instant alert, whatever the AI thinks. */
+export const isActivelyExploited = (item: Item & { category?: Category }) =>
+  !!item.kev || item.category === 'exploited-in-wild' || SIGNALS.exploited.test(text(item));
+
 const isRce = (item: Item) =>
   SIGNALS.rce.test(text(item)) || (item.cwes ?? []).some((c) => SIGNALS.rceCwes.includes(c));
 

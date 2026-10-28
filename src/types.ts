@@ -76,4 +76,6 @@ export interface ScoredItem extends Item {
   bumpReason?: string;
   /** When the instant Slack alert went out (criticals only); the daily brief doesn't repeat these. */
   alertedAt?: string;
+  /** Why Gemini held this critical back from an instant alert; it goes to the daily brief instead. */
+  holdReason?: string;
 }

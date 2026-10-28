@@ -84,6 +84,14 @@ describe('buildSite', () => {
     expect(news).toMatchObject({ id: 'n1', summary: 'raw snippet text' });
     expect(news).not.toHaveProperty('fix');
     expect(news).not.toHaveProperty('alerted');
+    expect(news).not.toHaveProperty('held');
+  });
+
+  it("carries the AI's hold-back reason to the page", async () => {
+    const outDir = join(mkdtempSync(join(tmpdir(), 'site-')), 'site');
+    await buildSite([{ date: '2026-10-28', generatedAt: 'x', items: [item({ id: 'h', priority: 'critical', holdReason: 'Windows only' })] }], { outDir });
+    const [held] = JSON.parse(readFileSync(join(outDir, 'data/2026-10-28.json'), 'utf8')).items;
+    expect(held).toMatchObject({ id: 'h', held: 'Windows only' });
   });
 
   it('drops links that are not https', async () => {

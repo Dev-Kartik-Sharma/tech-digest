@@ -99,6 +99,35 @@ describe('enrichWithGemini', () => {
     expect(calls[0]).toMatch(/benchmark/i);
   });
 
+  it('lets Gemini hold a critical back from the instant alert, with its reason', async () => {
+    const crit = scored(0, { kind: 'vuln', priority: 'critical', category: 'vuln-php', cvss: 9.8 });
+    const [held] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: false, holdReason: 'Needs a non-default config' })));
+    expect(held).toMatchObject({ priority: 'critical', holdReason: 'Needs a non-default config' });
+
+    const [sent] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: true })));
+    expect(sent?.holdReason).toBeUndefined();
+  });
+
+  it('never holds back actively exploited criticals, and ignores the verdict below critical', async () => {
+    const hold = fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: false, holdReason: 'meh' }));
+    const out = await enrichWithGemini(
+      [
+        scored(0, { kind: 'vuln', priority: 'critical', category: 'vuln-php', kev: true }),
+        scored(1, { kind: 'news', priority: 'critical', category: 'exploited-in-wild' }),
+        scored(2, { kind: 'news', priority: 'critical', category: 'vuln-js', title: 'Next.js flaw under active exploitation' }),
+        scored(3, { kind: 'vuln', priority: 'high', category: 'vuln-php' }),
+      ],
+      hold,
+    );
+    expect(out.map((i) => i.holdReason)).toEqual([undefined, undefined, undefined, undefined]);
+  });
+
+  it('asks Gemini whether each critical is worth an instant alert', async () => {
+    const calls: string[] = [];
+    await enrichWithGemini([scored(0, { priority: 'critical' })], fakeModel(() => ({}), calls));
+    expect(calls[0]).toMatch(/alertNow/);
+  });
+
   it('makes no call when there are no items', async () => {
     const calls: string[] = [];
     await enrichWithGemini([], fakeModel(() => ({}), calls));

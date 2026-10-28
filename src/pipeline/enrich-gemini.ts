@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { LIMITS } from '../config/sources.js';
 import { CATEGORIES, PRIORITIES, type Category, type ScoredItem } from '../types.js';
 import { truncate } from './normalize.js';
+import { isActivelyExploited } from './score.js';
 
 /** Sends a prompt, returns the model's raw JSON text. */
 export type Generate = (prompt: string) => Promise<string>;
@@ -20,6 +21,11 @@ const RESPONSE_SCHEMA = {
       relevant: { type: 'boolean', description: "Worth these developers' attention." },
       bump: { type: 'boolean', description: 'True only if clearly more urgent than its current priority.' },
       reason: { type: 'string', description: 'One short phrase, only when bump is true.' },
+      alertNow: {
+        type: 'boolean',
+        description: 'Only for items with priority critical: false if it can wait for the next daily brief instead of an instant alert.',
+      },
+      holdReason: { type: 'string', description: 'At most 12 words, only when alertNow is false.' },
     },
     required: ['i', 'summary', 'category', 'relevant', 'bump'],
   },
@@ -61,6 +67,10 @@ function buildPrompt(batch: ScoredItem[]): string {
     'AI news is relevant when it is about models, capabilities, benchmarks, developer tools, APIs, pricing or workflows, not funding rounds, lawsuits or executive moves),',
     'and whether its priority should be bumped one level because it is clearly more urgent than labelled.',
     'For a breach or flaw at a third-party service, the next step says what to check or rotate (e.g. "Rotate your SendGrid API keys").',
+    'Items with priority "critical" are posted to the team\'s Slack channel the moment they arrive, and too many interrupt people. For each of them',
+    'set alertNow: false (with a holdReason) when it can safely wait for the next daily brief, e.g. it needs a non-default or unusual configuration,',
+    'only affects Windows or another platform than Linux servers, needs local access or admin rights, is disputed, only affects end-of-life versions,',
+    'or is a minor follow-up to news already out. Keep alertNow: true for remotely exploitable flaws in default setups of widely used software. When unsure, true.',
     'End every summary with one concrete next step. For vulnerabilities use the "affected" data: "Upgrade <package> to <fixed version> or later."',
     '(if several release lines are fixed, name them, e.g. "Upgrade PHP to 8.3.8 / 8.2.20 / 8.1.29 or later"); if there is no fix yet, give the',
     'workaround or mitigation from the text, or "No fix yet: watch for a patch". Never invent version numbers that are not in the item.',
@@ -80,6 +90,8 @@ interface Verdict {
   relevant?: boolean;
   bump?: boolean;
   reason?: string;
+  alertNow?: boolean;
+  holdReason?: string;
 }
 
 function apply(item: ScoredItem, v: Verdict | undefined): ScoredItem | null {
@@ -95,6 +107,11 @@ function apply(item: ScoredItem, v: Verdict | undefined): ScoredItem | null {
       out.priority = PRIORITIES[idx - 1]!;
       if (v.reason) out.bumpReason = truncate(v.reason, 120);
     }
+  }
+  // Gemini may hold a critical back to the daily brief, but never one being exploited right now
+  // (checked before its re-categorization too, so it can't recategorize its way past this)
+  if (out.priority === 'critical' && v.alertNow === false && !isActivelyExploited(item) && !isActivelyExploited(out)) {
+    out.holdReason = truncate(v.holdReason?.trim() || 'Can wait for the daily brief', 120);
   }
   return out;
 }

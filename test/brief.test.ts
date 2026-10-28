@@ -137,6 +137,11 @@ describe('formatBrief', () => {
     expect(p).toMatchObject({ unfurl_links: false, unfurl_media: false });
   });
 
+  it('says on a card when the AI held it back from an instant alert', () => {
+    const p = formatBrief([item({ priority: 'critical', holdReason: 'Needs a <non-default> config' })], '2026-10-27', SITE)!;
+    expect(allText(p)).toContain('Not alerted instantly: Needs a &lt;non-default&gt; config');
+  });
+
   it('falls back to the snippet and escapes titles and summaries', () => {
     const p = formatBrief([item({ title: 'a <b> & c', summary: undefined, snippet: 'x < y' })], '2026-10-27', SITE)!;
     expect(allText(p)).toContain('a &lt;b&gt; &amp; c');

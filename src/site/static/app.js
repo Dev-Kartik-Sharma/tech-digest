@@ -209,9 +209,11 @@ function card(item) {
       typeof item.cvss === 'number' ? h('span', { class: `badge ${cvssClass(item.cvss)}` }, `CVSS ${item.cvss.toFixed(1)}`) : null,
       item.kev ? h('span', { class: 'badge kev' }, 'Actively exploited') : null,
       item.alerted ? h('span', { class: 'badge alerted' }, 'Alerted in Slack') : null,
+      item.held ? h('span', { class: 'badge held' }, 'Held for the brief') : null,
     ),
     h('h4', { class: 'card-title' }, title),
     item.summary ? h('p', { class: 'summary' }, item.summary) : null,
+    item.held ? h('p', { class: 'held-note' }, `Not alerted instantly: ${item.held}`) : null,
     fix,
     affected,
     h(

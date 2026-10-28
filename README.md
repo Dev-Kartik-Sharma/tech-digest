@@ -94,6 +94,12 @@ alerts already posted are never sent again.
   13.29.0 or later".
 - For **news only**, Gemini can also change the category, raise the priority by one
   level, or drop promotional posts. It never changes a vulnerability's priority.
+- **AI hold-back for instant alerts:** for each critical, Gemini also says whether it's worth interrupting the
+  channel now (in the same request, no extra calls). It can hold one back when it needs a non-default
+  config, is Windows-only, needs local or admin access, is disputed or only affects end-of-life versions.
+  A held item stays **Critical** and appears in the next daily brief and on the page with the reason.
+  Guardrails: anything on CISA KEV or reported as actively exploited always alerts; if Gemini is down or
+  out of quota, alerts go out as usual; the AI can never create an alert, only hold one back.
 
 ## Setup
 

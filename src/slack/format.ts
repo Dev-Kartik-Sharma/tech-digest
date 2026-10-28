@@ -116,6 +116,7 @@ function briefCard(item: ScoredItem): Record<string, unknown>[] {
     item.kev ? '*Actively exploited*' : '',
     escapeMrkdwn(fixNote(item)),
     escapeMrkdwn(item.source),
+    item.holdReason ? `Not alerted instantly: ${escapeMrkdwn(item.holdReason)}` : '',
   ].filter(Boolean);
   return [
     context(`*${EMOJI[item.priority]} ${item.priority.toUpperCase()} · ${escapeMrkdwn(CATEGORY_LABEL[item.category])}*`),

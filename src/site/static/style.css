@@ -462,6 +462,17 @@ a {
   color: var(--brand);
 }
 
+.badge.held {
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--muted);
+}
+
+.held-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .card-title {
   font-size: 16px;
   font-weight: 650;

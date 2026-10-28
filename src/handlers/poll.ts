@@ -52,7 +52,7 @@ export async function runPoll(deps: PollDeps) {
   const enriched = deps.generate && toEnrich.length ? await enrichWithGemini(toEnrich, deps.generate) : toEnrich;
 
   const criticals = enriched
-    .filter((i) => i.priority === 'critical' && !LIMITS.briefOnlyCategories.includes(i.category))
+    .filter((i) => i.priority === 'critical' && !i.holdReason && !LIMITS.briefOnlyCategories.includes(i.category))
     .sort((a, b) => Number(escalatedIds.has(b.id)) - Number(escalatedIds.has(a.id)) || (b.cvss ?? 0) - (a.cvss ?? 0));
   const toAlert = criticals.slice(0, LIMITS.maxCriticalPerRun);
   const alertIds = new Set(toAlert.map((i) => i.id));
@@ -113,6 +113,7 @@ export async function runPoll(deps: PollDeps) {
     alerted: toAlert.length - failed.size - rejected.size,
     failedAlerts: failed.size,
     rejectedAlerts: rejected.size,
+    heldBack: enriched.filter((i) => i.holdReason).length,
   };
   console.log('poll done', JSON.stringify(stats));
   return stats;

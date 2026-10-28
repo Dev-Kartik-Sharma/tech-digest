@@ -221,6 +221,28 @@ describe('runPoll: review fixes', () => {
   });
 });
 
+describe('runPoll: AI hold-back', () => {
+  const holdAll: PollDeps['generate'] = async (prompt) =>
+    JSON.stringify([...prompt.matchAll(/"i":\s*(\d+)/g)].map((m) => ({ i: Number(m[1]), summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: false, holdReason: 'Needs a non-default config' })));
+
+  it('does not post a critical Gemini held back; it goes to the daily brief with the reason', async () => {
+    const { d, posts, store } = deps([phpRce(1)], { generate: holdAll });
+    const stats = await runPoll(d);
+    expect(posts).toHaveLength(0);
+    const [entry] = await store.listPending();
+    expect(entry?.item).toMatchObject({ id: 'CVE-2026-1001', priority: 'critical', holdReason: 'Needs a non-default config' });
+    expect(entry?.item.alertedAt).toBeUndefined();
+    expect(store.seen.get('CVE-2026-1001')).toBe('critical');
+    expect(stats).toMatchObject({ alerted: 0, heldBack: 1 });
+  });
+
+  it('still alerts an actively exploited critical even if Gemini says hold', async () => {
+    const { d, posts } = deps([phpRce(1, { kev: true })], { generate: holdAll });
+    await runPoll(d);
+    expect(posts).toHaveLength(1);
+  });
+});
+
 describe('runPoll: Python criticals', () => {
   const pyRce = (over: Partial<Item> = {}) => phpRce(1, { id: 'CVE-2026-3001', aliases: ['CVE-2026-3001'], title: 'Python remote code execution', stackHint: 'python', ...over });
 
