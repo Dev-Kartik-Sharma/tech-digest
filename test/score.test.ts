@@ -57,6 +57,20 @@ describe('scoreItem: vulnerabilities', () => {
     expect(s?.priority).toBe('critical');
   });
 
+  it('matches MAJOR_PACKAGES case-insensitively (GitHub names some PyPI packages "Django")', () => {
+    const s = scoreItem(vuln({ ecosystem: 'pip', cvss: 9.1, packages: [{ name: 'Django', ecosystem: 'pip' }] }));
+    expect(s?.priority).toBe('critical');
+  });
+
+  it('treats common third-party service SDKs as major packages', () => {
+    const sdk = (name: string, ecosystem: 'npm' | 'composer' | 'pip') =>
+      scoreItem(vuln({ ecosystem, cvss: 9.1, packages: [{ name, ecosystem }] }))?.priority;
+    expect(sdk('@sendgrid/mail', 'npm')).toBe('critical');
+    expect(sdk('twilio/sdk', 'composer')).toBe('critical');
+    expect(sdk('google-auth-library', 'npm')).toBe('critical');
+    expect(sdk('stripe', 'pip')).toBe('critical');
+  });
+
   it('drops advisories for packages below the download floor', () => {
     const s = scoreItem(
       vuln({ ecosystem: 'npm', cvss: 7.5, downloads: 40, packages: [{ name: 'tiny', ecosystem: 'npm' }] }),
@@ -96,6 +110,12 @@ describe('scoreItem: vulnerabilities', () => {
     expect(core('python', 5.0)).toMatchObject({ priority: 'medium', category: 'vuln-python' });
   });
 
+  it('recognises Redis, MariaDB and SQLite as databases', () => {
+    for (const db of ['Redis', 'MariaDB', 'SQLite']) {
+      expect(scoreItem(vuln({ kev: true, title: `${db} Use-After-Free Vulnerability` }))).toMatchObject({ category: 'vuln-database' });
+    }
+  });
+
   it('recognises nginx, MongoDB and GitLab in KEV titles', () => {
     expect(scoreItem(vuln({ kev: true, title: 'F5 NGINX Plus Buffer Overflow Vulnerability' }))).toMatchObject({ priority: 'critical', category: 'vuln-web-server' });
     expect(scoreItem(vuln({ kev: true, title: 'MongoDB Server Use-After-Free Vulnerability' }))).toMatchObject({ priority: 'critical', category: 'vuln-database' });
@@ -122,6 +142,17 @@ describe('scoreItem: news', () => {
     const s = scoreItem(news({ title: 'Malicious npm packages steal developer credentials' }));
     expect(s?.category).toBe('supply-chain');
     expect(['critical', 'high', 'medium']).toContain(s?.priority);
+  });
+
+  it('files a breach at a third-party service as a medium third-party services item', () => {
+    for (const name of ['SendGrid', 'Twilio', 'Mailchimp', 'Stripe', 'Auth0', 'Okta']) {
+      expect(scoreItem(news({ title: `${name} data breach exposes customer API keys` }))).toMatchObject({ priority: 'medium', category: 'vuln-services' });
+    }
+  });
+
+  it('rates an actively exploited flaw in Google sign-in as high', () => {
+    const s = scoreItem(news({ title: 'Google OAuth flaw actively exploited to hijack accounts' }));
+    expect(s).toMatchObject({ priority: 'high', category: 'exploited-in-wild' });
   });
 
   it('rates generic security news without stack keywords as low', () => {

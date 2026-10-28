@@ -18,9 +18,12 @@ const registry = (item: Item) => (item.ecosystem && item.ecosystem !== 'core' ? 
 const isRce = (item: Item) =>
   SIGNALS.rce.test(text(item)) || (item.cwes ?? []).some((c) => SIGNALS.rceCwes.includes(c));
 
+// registry names are case-insensitive, and GitHub reports some PyPI packages capitalised ("Django")
+const hasMajorPackage = (item: Item) => !!item.packages?.some((p) => MAJOR_PACKAGES.has(p.name.toLowerCase()));
+
 /** true / false when we can tell, undefined when popularity is unknown. */
 function isPopular(item: Item): boolean | undefined {
-  if (item.packages?.some((p) => MAJOR_PACKAGES.has(p.name))) return true;
+  if (hasMajorPackage(item)) return true;
   const eco = registry(item);
   if (item.downloads === undefined || !eco) return undefined;
   return item.downloads >= POPULARITY.popular[eco];
@@ -28,7 +31,7 @@ function isPopular(item: Item): boolean | undefined {
 
 function belowFloor(item: Item): boolean {
   const eco = registry(item);
-  if (item.downloads === undefined || !eco || item.packages?.some((p) => MAJOR_PACKAGES.has(p.name))) return false;
+  if (item.downloads === undefined || !eco || hasMajorPackage(item)) return false;
   return item.downloads < POPULARITY.floor[eco];
 }
 
@@ -64,7 +67,10 @@ function newsCategory(item: Item, stack: Stack | undefined): Category {
   if (stack && (isRce(item) || (item.feedKind === 'release' && SIGNALS.security.test(t)))) {
     return `vuln-${stack}`;
   }
-  if (SIGNALS.breachMalware.test(t)) return 'breach-malware';
+  if (SIGNALS.breachMalware.test(t)) {
+    // a breach at a provider we integrate with means checking and rotating our keys for it
+    return stack === 'services' ? 'vuln-services' : 'breach-malware';
+  }
   if (item.feedKind === 'ai-news' || stack === 'ai') return 'ai-update';
   if (item.feedKind === 'release' || (item.feedKind === 'dev-news' && SIGNALS.release.test(t))) {
     return 'release-update';

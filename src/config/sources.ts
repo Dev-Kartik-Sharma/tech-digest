@@ -52,6 +52,9 @@ export const NVD_CPES: { cpe: string; stack: Stack; label: string }[] = [
   { cpe: 'cpe:2.3:a:postgresql:postgresql', stack: 'database', label: 'PostgreSQL' },
   { cpe: 'cpe:2.3:a:oracle:mysql', stack: 'database', label: 'MySQL' },
   { cpe: 'cpe:2.3:a:oracle:mysql_server', stack: 'database', label: 'MySQL' },
+  { cpe: 'cpe:2.3:a:mariadb:mariadb', stack: 'database', label: 'MariaDB' },
+  { cpe: 'cpe:2.3:a:redis:redis', stack: 'database', label: 'Redis' },
+  { cpe: 'cpe:2.3:a:sqlite:sqlite', stack: 'database', label: 'SQLite' },
   { cpe: 'cpe:2.3:a:f5:nginx', stack: 'web-server', label: 'nginx' },
   { cpe: 'cpe:2.3:a:f5:nginx_open_source', stack: 'web-server', label: 'nginx' },
   { cpe: 'cpe:2.3:a:f5:nginx_plus', stack: 'web-server', label: 'NGINX Plus' },
@@ -91,8 +94,28 @@ export const STACK_KEYWORDS: Record<Stack, RegExp[]> = {
     /\bvue(\.?js)?\b/i,
   ],
   python: [/\bpython\b/i, /\bdjango\b/i, /\bflask\b/i, /\bfastapi\b/i, /\bpypi\b/i, /\bpip\b/],
-  database: [/\bpostgres(ql)?\b/i, /\bmysql\b/i, /\bmariadb\b/i, /\bmongo(db|ose)\b/i],
+  database: [/\bpostgres(ql)?\b/i, /\bmysql\b/i, /\bmariadb\b/i, /\bmongo(db|ose)\b/i, /\bredis\b/i, /\bsqlite\d?\b/i],
   'web-server': [/\bnginx\b/i],
+  // providers whose API keys and SDKs live in our apps: email, SMS, payments, sign-in
+  services: [
+    /\bsendgrid\b/i,
+    /\btwilio\b/i,
+    /\bmailchimp\b/i,
+    /\bmandrill\b/i,
+    /\bmailgun\b/i,
+    /\bPostmark\b/, // case-sensitive: not the postal mark
+    /\bstripe\b/i,
+    /\bpaypal\b/i,
+    /\brazorpay\b/i,
+    /\bbraintree\b/i,
+    /\bauth0\b/i,
+    /\bokta\b/i,
+    /\bgoogle (oauth|sign[- ]in|login|auth(entication)?|identity)\b/i,
+    /\bfirebase\b/i,
+    /\bSentry\b/, // case-sensitive: the error tracker
+    /\balgolia\b/i,
+    /\bcloudinary\b/i,
+  ],
   devops: [/\bgithub\b/i, /\bgitlab\b/i],
   cloud: [/\baws\b/i, /\bamazon web services\b/i, /\bamazon (s3|ec2|rds)\b/i, /\bazure\b/i, /\bgoogle cloud\b/i, /\bgcp\b/i, /\bcloudflare\b/i],
   ai: [
@@ -134,7 +157,7 @@ export const SIGNALS = {
   aiLaunch: /\b(introduc(es|ing)|launch(es|ed|ing)?|unveil(s|ed)?|releas(es|ed|ing)|announc(es|ed|ing)|debuts?|now available|generally available|benchmarks?|SWE-bench)\b/i,
 };
 
-/** Popular packages that are critical-eligible even if the download lookup fails. */
+/** Popular packages that are critical-eligible even if the download lookup fails. Lower-case: matched case-insensitively. */
 export const MAJOR_PACKAGES = new Set([
   'express', 'react', 'react-dom', 'next', 'mongoose', 'mongodb', 'axios', 'lodash', 'vite', 'webpack',
   'jsonwebtoken', 'body-parser', 'multer', 'socket.io', 'dompurify', 'node-fetch', 'ws', 'sequelize',
@@ -142,6 +165,17 @@ export const MAJOR_PACKAGES = new Set([
   '@nestjs/core', '@nestjs/common', '@angular/core', '@angular/common', 'pg', 'mysql2', 'mysql',
   'phpmailer/phpmailer', 'monolog/monolog', 'twig/twig', 'composer/composer',
   'django', 'flask', 'fastapi', 'requests', 'urllib3', 'jinja2', 'pydantic', 'sqlalchemy', 'pillow',
+  // database clients
+  'redis', 'ioredis', 'sqlite3', 'better-sqlite3', 'mariadb', 'predis/predis',
+  // third-party service SDKs, auth and email
+  '@sendgrid/mail', '@sendgrid/client', 'twilio', '@mailchimp/mailchimp_marketing', '@mailchimp/mailchimp_transactional',
+  'mailgun.js', 'stripe', 'razorpay', 'google-auth-library', 'googleapis', 'firebase', 'firebase-admin',
+  'passport', 'passport-google-oauth20', 'next-auth', '@auth/core', 'jose', 'nodemailer', 'aws-sdk',
+  '@aws-sdk/client-s3', '@sentry/node',
+  'sendgrid/sendgrid', 'twilio/sdk', 'mailchimp/marketing', 'stripe/stripe-php', 'razorpay/razorpay',
+  'google/apiclient', 'google/auth', 'aws/aws-sdk-php', 'firebase/php-jwt', 'kreait/firebase-php',
+  'league/oauth2-client', 'laravel/socialite', 'laravel/passport', 'sentry/sentry',
+  'sendgrid', 'google-auth', 'boto3', 'pyjwt', 'authlib',
 ]);
 
 export const POPULARITY = {

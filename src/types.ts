@@ -2,7 +2,7 @@ export const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
 /** Tech areas the team cares about, in detection order (first keyword match wins). */
-export const STACKS = ['php', 'js', 'python', 'database', 'web-server', 'devops', 'cloud', 'ai'] as const;
+export const STACKS = ['php', 'js', 'python', 'database', 'web-server', 'services', 'devops', 'cloud', 'ai'] as const;
 export type Stack = (typeof STACKS)[number];
 
 export const CATEGORIES = [
@@ -11,6 +11,7 @@ export const CATEGORIES = [
   'vuln-python',
   'vuln-database',
   'vuln-web-server',
+  'vuln-services',
   'vuln-devops',
   'vuln-cloud',
   'vuln-ai',

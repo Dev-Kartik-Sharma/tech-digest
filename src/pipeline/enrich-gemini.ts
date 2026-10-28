@@ -53,12 +53,14 @@ function buildPrompt(batch: ScoredItem[]): string {
   }));
   return [
     'You triage tech and security news for a team of developers working with PHP (Laravel, WordPress, Symfony), JavaScript/TypeScript (Node.js, Express, NestJS, React, Next.js, Angular: MERN and MEAN stacks, npm packages),',
-    'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MongoDB), nginx, GitHub/GitLab and cloud platforms (mainly AWS),',
+    'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite), nginx, GitHub/GitLab and cloud platforms (mainly AWS),',
+    'third-party services they integrate through API keys and SDKs (SendGrid, Twilio, Mailchimp, Stripe, Razorpay, Auth0, Okta, Google sign-in, Firebase),',
     'and who want to keep up with AI models and AI developer tools (Claude, ChatGPT / OpenAI, Gemini, Copilot, Cursor, MCP, open-weight models).',
     `For each item return: a plain-English summary (max 2 short sentences plus a next step), the best category from [${CATEGORIES.join(', ')}],`,
     'whether it is relevant to these developers (general tech news that developers commonly care about counts as relevant; marketing, webinars and promos do not;',
     'AI news is relevant when it is about models, capabilities, benchmarks, developer tools, APIs, pricing or workflows, not funding rounds, lawsuits or executive moves),',
     'and whether its priority should be bumped one level because it is clearly more urgent than labelled.',
+    'For a breach or flaw at a third-party service, the next step says what to check or rotate (e.g. "Rotate your SendGrid API keys").',
     'End every summary with one concrete next step. For vulnerabilities use the "affected" data: "Upgrade <package> to <fixed version> or later."',
     '(if several release lines are fixed, name them, e.g. "Upgrade PHP to 8.3.8 / 8.2.20 / 8.1.29 or later"); if there is no fix yet, give the',
     'workaround or mitigation from the text, or "No fix yet: watch for a patch". Never invent version numbers that are not in the item.',
