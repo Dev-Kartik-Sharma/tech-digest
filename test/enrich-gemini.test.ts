@@ -100,11 +100,11 @@ describe('enrichWithGemini', () => {
   });
 
   it('lets Gemini hold a critical back from the instant alert, with its reason', async () => {
-    const crit = scored(0, { kind: 'vuln', priority: 'critical', category: 'vuln-php', cvss: 9.8 });
-    const [held] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: false, holdReason: 'Needs a non-default config' })));
+    const crit = scored(0, { kind: 'vuln', priority: 'critical', category: 'vuln-database', cvss: 9.8 });
+    const [held] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-database', relevant: true, bump: false, alertNow: false, holdReason: 'Needs a non-default config' })));
     expect(held).toMatchObject({ priority: 'critical', holdReason: 'Needs a non-default config' });
 
-    const [sent] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-php', relevant: true, bump: false, alertNow: true })));
+    const [sent] = await enrichWithGemini([crit], fakeModel(() => ({ summary: 's', category: 'vuln-database', relevant: true, bump: false, alertNow: true })));
     expect(sent?.holdReason).toBeUndefined();
   });
 
@@ -120,6 +120,13 @@ describe('enrichWithGemini', () => {
       hold,
     );
     expect(out.map((i) => i.holdReason)).toEqual([undefined, undefined, undefined, undefined]);
+  });
+
+  it('never holds back criticals in the focus areas: PHP, JS / Node, AI and supply chain', async () => {
+    const hold = fakeModel(() => ({ summary: 's', relevant: true, bump: false, alertNow: false, holdReason: 'meh' }));
+    const cats = ['vuln-php', 'vuln-js', 'vuln-ai', 'supply-chain', 'vuln-database'] as const;
+    const out = await enrichWithGemini(cats.map((category, i) => scored(i, { kind: 'vuln', priority: 'critical', category })), hold);
+    expect(out.map((i) => i.holdReason)).toEqual([undefined, undefined, undefined, undefined, 'meh']);
   });
 
   it('asks Gemini whether each critical is worth an instant alert', async () => {

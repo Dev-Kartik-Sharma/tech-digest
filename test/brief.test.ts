@@ -124,6 +124,34 @@ describe('formatBrief', () => {
     expect(allText(p)).toContain('Top picks');
   });
 
+  it('puts PHP, JS and AI criticals ahead of other areas, even with a lower CVSS', () => {
+    const p = formatBrief(
+      [
+        item({ priority: 'critical', kind: 'vuln', category: 'vuln-database', cvss: 9.8, title: 'DB' }),
+        item({ priority: 'critical', kind: 'vuln', category: 'vuln-php', cvss: 9.1, title: 'PHP' }),
+        item({ priority: 'critical', kind: 'vuln', category: 'vuln-ai', cvss: 9.0, title: 'AI' }),
+        item({ priority: 'critical', kind: 'vuln', category: 'vuln-cloud', cvss: 10, title: 'CLOUD' }),
+      ],
+      '2026-10-27',
+      SITE,
+    )!;
+    expect(cardTitles(p)).toEqual(['PHP', 'AI', 'CLOUD']);
+  });
+
+  it('keeps a slot for the top AI item after the criticals when there is room', () => {
+    const p = formatBrief(
+      [
+        item({ priority: 'critical', kind: 'vuln', category: 'vuln-php', title: 'CRIT' }),
+        item({ priority: 'high', category: 'vuln-cloud', title: 'HIGH 1' }),
+        item({ priority: 'high', category: 'vuln-cloud', title: 'HIGH 2' }),
+        item({ priority: 'medium', category: 'ai-update', title: 'Claude Opus 6' }),
+      ],
+      '2026-10-27',
+      SITE,
+    )!;
+    expect(cardTitles(p)).toEqual(['CRIT', 'HIGH 1', 'Claude Opus 6']);
+  });
+
   it('shows no cards on a low-only day, just counts and the button', () => {
     const p = formatBrief([item({ priority: 'low' })], '2026-10-27', SITE)!;
     expect(cardTitles(p)).toHaveLength(0);

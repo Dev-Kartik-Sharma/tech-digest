@@ -78,6 +78,13 @@ describe('scoreItem: vulnerabilities', () => {
     expect(sdk('kubernetes', 'pip')).toBe('critical');
   });
 
+  it('files advisories in AI SDKs and agent tooling as AI security, critical-eligible', () => {
+    const ai = (name: string, ecosystem: 'npm' | 'pip' | 'composer') => scoreItem(vuln({ ecosystem, cvss: 9.1, packages: [{ name, ecosystem }] }));
+    expect(ai('@modelcontextprotocol/sdk', 'npm')).toMatchObject({ priority: 'critical', category: 'vuln-ai' });
+    expect(ai('litellm', 'pip')).toMatchObject({ priority: 'critical', category: 'vuln-ai' });
+    expect(ai('openai-php/client', 'composer')).toMatchObject({ priority: 'critical', category: 'vuln-ai' });
+  });
+
   it('drops advisories for packages below the download floor', () => {
     const s = scoreItem(
       vuln({ ecosystem: 'npm', cvss: 7.5, downloads: 40, packages: [{ name: 'tiny', ecosystem: 'npm' }] }),
@@ -220,6 +227,40 @@ describe('scoreItem: news', () => {
   it('treats a vulnerability in an AI coding tool as vuln-ai', () => {
     const s = scoreItem(news({ title: 'Claude Code flaw allowed remote code execution via malicious repo' }));
     expect(s).toMatchObject({ priority: 'high', category: 'vuln-ai' });
+  });
+
+  it('files AI security research as vuln-ai: medium, or high for prompt injection and CVEs', () => {
+    const feed = { feedKind: 'security-news' as const, stackHint: 'ai' as const };
+    expect(scoreItem(news({ ...feed, title: 'Breaking Claude Code Opus 5 Auto Mode' }))).toMatchObject({ priority: 'medium', category: 'vuln-ai' });
+    expect(scoreItem(news({ ...feed, title: 'Visual Studio Copilot remote code execution (CVE-2026-103572)' }))).toMatchObject({ priority: 'high', category: 'vuln-ai' });
+    expect(scoreItem(news({ title: 'Prompt injection in GitHub Copilot leaks private repo secrets' }))).toMatchObject({ priority: 'high', category: 'vuln-ai' });
+  });
+
+  it('only files AI stories from general security sites as AI security when they are about an attack, flaw or breach', () => {
+    expect(scoreItem(news({ title: 'OpenAI launches GPT-6.1 Terra with 3x faster AI agents, 50% lower pricing' }))?.category).toBe('ai-update');
+    expect(scoreItem(news({ title: 'Warp discloses breach exposing AI agent logs, user telemetry data' }))?.category).toBe('vuln-ai');
+    expect(scoreItem(news({ title: 'OpenAI Compaction Flaw Let Researchers Bypass Hidden Reasoning Protections' }))?.category).toBe('vuln-ai');
+    expect(scoreItem(news({ title: 'OpenAI AI Agents Demonstrate VM Escapes and Secret Cross-Sandbox Communication' }))?.category).toBe('vuln-ai');
+  });
+
+  it('rates AI coding tool updates as medium even without launch words', () => {
+    const ai = { feedKind: 'ai-news' as const, stackHint: 'ai' as const };
+    expect(scoreItem(news({ ...ai, title: 'Agent SDK', snippet: 'Build your own agents on top of Cursor.' }))).toMatchObject({ priority: 'medium', category: 'ai-update' });
+    expect(scoreItem(news({ ...ai, title: 'Copilot assisted permissions in pull requests' }))).toMatchObject({ priority: 'medium', category: 'ai-update' });
+    expect(scoreItem(news({ ...ai, title: 'Our thoughts on AI policy' }))).toMatchObject({ priority: 'low', category: 'ai-update' });
+  });
+
+  it('rates a compromised popular package or worm in npm, Composer or AI tooling as critical supply chain', () => {
+    expect(scoreItem(news({ title: 'Popular npm package chalk compromised to steal crypto' }))).toMatchObject({ priority: 'critical', category: 'supply-chain' });
+    expect(scoreItem(news({ title: 'Self-replicating worm spreads through npm maintainer accounts' }))).toMatchObject({ priority: 'critical', category: 'supply-chain' });
+    // ordinary malicious-package reports stay high
+    expect(scoreItem(news({ title: 'Malicious npm packages steal developer credentials' }))).toMatchObject({ priority: 'high', category: 'supply-chain' });
+    expect(scoreItem(news({ title: 'Malicious npm packages that compromised developer machines' }))).toMatchObject({ priority: 'high', category: 'supply-chain' });
+  });
+
+  it('treats malicious MCP servers and IDE extensions as supply chain', () => {
+    expect(scoreItem(news({ title: 'Malicious MCP server quietly copies every email to attackers' }))?.category).toBe('supply-chain');
+    expect(scoreItem(news({ title: 'Malicious VS Code extensions target Cursor users' }))?.category).toBe('supply-chain');
   });
 
   it('rates general tech news as low tech-news', () => {

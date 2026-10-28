@@ -1,3 +1,4 @@
+import { FOCUS_CATEGORIES } from '../config/sources.js';
 import { truncate } from '../pipeline/normalize.js';
 import { CATEGORIES, PRIORITIES, type Category, type Priority, type ScoredItem } from '../types.js';
 
@@ -19,7 +20,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   'vuln-services': 'Third-party services (APIs & SDKs)',
   'vuln-devops': 'Infrastructure vulnerability',
   'vuln-cloud': 'Cloud (AWS & co.) vulnerability',
-  'vuln-ai': 'AI tools vulnerability',
+  'vuln-ai': 'AI security',
   'exploited-in-wild': 'Exploited in the wild',
   'supply-chain': 'Supply chain',
   'breach-malware': 'Breach / malware',
@@ -81,9 +82,14 @@ function fairShare(items: ScoredItem[], cap: number): ScoredItem[] {
 
 const TOP_CARDS = 3;
 
-/** Highest CVSS first, then vulnerabilities with a known fix (actionable). */
+const isFocus = (i: ScoredItem) => FOCUS_CATEGORIES.includes(i.category);
+const AI_CATEGORIES: readonly Category[] = ['ai-update', 'vuln-ai'];
+
+/** The team's focus areas first, then highest CVSS, then vulnerabilities with a known fix (actionable). */
 const mostUrgent = (a: ScoredItem, b: ScoredItem) =>
-  (b.cvss ?? 0) - (a.cvss ?? 0) || Number(fixNote(b).startsWith('fix:')) - Number(fixNote(a).startsWith('fix:'));
+  Number(isFocus(b)) - Number(isFocus(a)) ||
+  (b.cvss ?? 0) - (a.cvss ?? 0) ||
+  Number(fixNote(b).startsWith('fix:')) - Number(fixNote(a).startsWith('fix:'));
 
 const dayLabel = (date: string) =>
   new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
@@ -103,10 +109,11 @@ function pickCards(items: ScoredItem[]): ScoredItem[] {
   };
 
   const criticals = of('critical').slice(0, TOP_CARDS);
-  if (criticals.length) return [...criticals, ...fill(TOP_CARDS - criticals.length)];
-
-  const ai = [...of('high'), ...of('medium')].find((i) => i.category === 'ai-update');
-  return ai ? [...fill(TOP_CARDS - 1, ai), ai] : fill(TOP_CARDS);
+  const free = TOP_CARDS - criticals.length;
+  if (!free) return criticals;
+  // AI-assisted development is a team focus: keep a slot for the top AI item when there's room
+  const ai = [...of('high'), ...of('medium')].find((i) => AI_CATEGORIES.includes(i.category));
+  return ai ? [...criticals, ...fill(free - 1, ai), ai] : [...criticals, ...fill(free)];
 }
 
 /** One featured item, laid out like a critical alert: label, linked title, AI summary, key facts. */

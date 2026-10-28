@@ -1,4 +1,4 @@
-import type { FeedKind, Stack } from '../types.js';
+import type { Category, FeedKind, Stack } from '../types.js';
 
 export interface FeedSource {
   name: string;
@@ -37,6 +37,11 @@ export const RSS_FEEDS: FeedSource[] = [
   { name: 'Simon Willison', url: 'https://simonwillison.net/atom/entries/', kind: 'ai-news', stack: 'ai' },
   { name: 'Latent Space', url: 'https://www.latent.space/feed', kind: 'ai-news', stack: 'ai' },
   { name: 'TechCrunch AI', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', kind: 'ai-news', stack: 'ai' },
+  // AI coding tools the team works with
+  { name: 'GitHub Copilot changelog', url: 'https://github.blog/changelog/label/copilot/feed/', kind: 'ai-news', stack: 'ai' },
+  { name: 'Cursor changelog', url: 'https://cursor.com/changelog/rss.xml', kind: 'ai-news', stack: 'ai' },
+  // AI security research (prompt injection, agent and MCP attacks)
+  { name: 'Embrace The Red', url: 'https://embracethered.com/blog/index.xml', kind: 'security-news', stack: 'ai' },
   { name: 'Hacker News', url: 'https://hnrss.org/frontpage?points=300', kind: 'tech-news' },
 ];
 
@@ -167,16 +172,39 @@ export const SIGNALS = {
   rce: /remote code execution|\bRCE\b|code injection|command injection|arbitrary code|deserializ/i,
   rceCwes: ['CWE-94', 'CWE-95', 'CWE-77', 'CWE-78', 'CWE-502'],
   exploited: /actively exploited|exploited in the wild|being exploited|\bexploitation (attempts|activity|campaign)|under active exploitation|zero[- ]day|\b0-day\b/i,
-  supplyChain: /supply[- ]chain|malicious (npm |composer |pypi )?packages?|typosquat|hijacked package|compromised package|self-replicating worm/i,
+  supplyChain:
+    /supply[- ]chain|malicious (npm |composer |pypi )?packages?|typosquat|slopsquat|hijacked package|compromised package|self-replicating worm|malicious (MCP|VS ?Code|IDE|browser|Cursor) (servers?|extensions?|plugins?)|poisoned (extensions?|packages?|models?)|\b(npm|pypi|composer|packagist) (packages?|librar(y|ies)|maintainers?)\b.{0,40}\b(compromised|hijacked|backdoored)/i,
+  /** A real package or maintainer taken over (not just a typosquat): critical in the focus stacks. */
+  compromised:
+    /\b(packages?|maintainers?|accounts?|librar(y|ies)|extensions?)( (?!that\b|which\b|to\b)[\w@/.-]+)? (was |were |got |been |is |has )*(compromised|hijacked|backdoored)|\b(compromised|hijacked|backdoored) (popular |npm |pypi |composer )*(packages?|maintainers?|accounts?|librar(y|ies)|extensions?)|self-replicating|\bworms?\b/i,
   breachMalware: /\bbreach|ransomware|malware|infostealer|stealer|botnet|backdoor|data leak/i,
   security: /security|vulnerab|\bflaws?\b|\bCVE-\d{4}-\d+/i,
   release: /\breleased?\b|\bv?\d+\.\d+(\.\d+)?\b|\bannounc/i,
   /** AI posts worth more than a skim: launches, new capabilities, benchmark results. */
+  /** Attacks on AI tools and agents. */
+  aiSecurity: /prompt[- ]injection|jailbreak|tool[- ]poisoning|exfiltrat|(sandbox|vm|container) (escape|bypass)|\bvm escapes?\b|guardrail bypass/i,
+  /** AI coding tools and workflows the team uses: updates to these are worth a look even without launch words. */
+  aiDevTools: [
+    /\b(claude code|copilot|codex|windsurf|gemini cli|model context protocol|agent sdk|coding agents?|ai[- ]assisted|vibe coding|agentic)\b/i,
+    /\b(Cursor|MCP|IDE)\b/, // case-sensitive
+  ],
   aiLaunch: /\b(introduc(es|ing)|launch(es|ed|ing)?|unveil(s|ed)?|releas(es|ed|ing)|announc(es|ed|ing)|debuts?|now available|generally available|benchmarks?|SWE-bench)\b/i,
 };
 
+/** AI SDKs and agent tooling: their advisories are filed as AI security, not under the language. Lower-case. */
+export const AI_PACKAGES = new Set([
+  '@modelcontextprotocol/sdk', '@anthropic-ai/sdk', '@anthropic-ai/claude-code', '@anthropic-ai/claude-agent-sdk', 'openai', 'ai',
+  'langchain', '@langchain/core', 'llamaindex', '@google/genai', '@openai/codex',
+  'anthropic', 'langchain-core', 'llama-index', 'mcp', 'litellm', 'transformers', 'claude-agent-sdk',
+  'openai-php/client', 'openai-php/laravel', 'prism-php/prism', 'anthropic-ai/sdk',
+]);
+
+/** Categories where a critical always goes to Slack instantly (the AI can't hold it back). */
+export const FOCUS_CATEGORIES: readonly Category[] = ['vuln-php', 'vuln-js', 'vuln-ai', 'ai-update', 'supply-chain'];
+
 /** Popular packages that are critical-eligible even if the download lookup fails. Lower-case: matched case-insensitively. */
 export const MAJOR_PACKAGES = new Set([
+  ...AI_PACKAGES,
   'express', 'react', 'react-dom', 'next', 'mongoose', 'mongodb', 'axios', 'lodash', 'vite', 'webpack',
   'jsonwebtoken', 'body-parser', 'multer', 'socket.io', 'dompurify', 'node-fetch', 'ws', 'sequelize',
   'laravel/framework', 'symfony/symfony', 'symfony/http-kernel', 'guzzlehttp/guzzle', 'livewire/livewire',

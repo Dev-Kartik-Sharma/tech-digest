@@ -59,6 +59,8 @@ describe('buildSite', () => {
     expect(index.days.map((d: { date: string }) => d.date)).toEqual(['2026-10-27', '2026-10-26']);
     expect(index.days[0]).toMatchObject({ generatedAt: '2026-10-27T04:45:00Z', counts: { critical: 1, high: 1, medium: 0, low: 1 } });
     expect(index.categories).toContainEqual({ id: 'vuln-php', label: 'PHP vulnerability' });
+    // the team's focus areas come first on the page
+    expect(index.categories.slice(0, 5).map((c: { id: string }) => c.id)).toEqual(['vuln-php', 'vuln-js', 'vuln-ai', 'ai-update', 'supply-chain']);
   });
 
   it('writes each day with only the fields the page shows', async () => {

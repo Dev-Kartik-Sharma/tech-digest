@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { LIMITS } from '../config/sources.js';
+import { FOCUS_CATEGORIES, LIMITS } from '../config/sources.js';
 import { CATEGORIES, PRIORITIES, type Category, type ScoredItem } from '../types.js';
 import { truncate } from './normalize.js';
 import { isActivelyExploited } from './score.js';
@@ -62,6 +62,8 @@ function buildPrompt(batch: ScoredItem[]): string {
     'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite), nginx, infrastructure (GitHub/GitLab, Docker, Kubernetes, Vercel, Supabase, Cloudflare), cloud platforms (mainly AWS),',
     'third-party services they integrate through API keys and SDKs (SendGrid, Twilio, Mailchimp, Stripe, Razorpay, Auth0, Okta, Google sign-in, Firebase),',
     'and who want to keep up with AI models and AI developer tools (Claude, ChatGPT / OpenAI, Gemini, Copilot, Cursor, MCP, open-weight models).',
+    'Their main focus is PHP (Laravel) and Node.js / TypeScript, and they rely heavily on AI-assisted development (Claude Code, Cursor, Copilot, MCP servers, agents):',
+    'when deciding bumps, favour news about those, AI security (prompt injection, agent and MCP attacks) and supply-chain attacks on npm, Composer or AI tooling.',
     `For each item return: a plain-English summary (max 2 short sentences plus a next step), the best category from [${CATEGORIES.join(', ')}],`,
     'whether it is relevant to these developers (general tech news that developers commonly care about counts as relevant; marketing, webinars and promos do not;',
     'AI news is relevant when it is about models, capabilities, benchmarks, developer tools, APIs, pricing or workflows, not funding rounds, lawsuits or executive moves),',
@@ -108,9 +110,10 @@ function apply(item: ScoredItem, v: Verdict | undefined): ScoredItem | null {
       if (v.reason) out.bumpReason = truncate(v.reason, 120);
     }
   }
-  // Gemini may hold a critical back to the daily brief, but never one being exploited right now
-  // (checked before its re-categorization too, so it can't recategorize its way past this)
-  if (out.priority === 'critical' && v.alertNow === false && !isActivelyExploited(item) && !isActivelyExploited(out)) {
+  // Gemini may hold a critical back to the daily brief, but never one in the team's focus areas or one
+  // being exploited right now (checked before its re-categorization too, so it can't recategorize past this)
+  const mustAlert = (i: ScoredItem) => FOCUS_CATEGORIES.includes(i.category) || isActivelyExploited(i);
+  if (out.priority === 'critical' && v.alertNow === false && !mustAlert(item) && !mustAlert(out)) {
     out.holdReason = truncate(v.holdReason?.trim() || 'Can wait for the daily brief', 120);
   }
   return out;

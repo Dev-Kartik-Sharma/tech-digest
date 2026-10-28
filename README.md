@@ -7,6 +7,9 @@ A security and tech-news radar for developers, in Slack and on a daily web page.
 
 <br clear="left" />
 
+**Team focus:** PHP, Node.js / JS, AI-assisted development (models, AI coding tools, AI security) and supply-chain
+attacks. These come first in the Slack brief and on the page, and a critical in any of them always goes to Slack instantly.
+
 It watches security advisories and tech news for these tech areas:
 
 | Tech area (digest category) | Covers |
@@ -19,7 +22,7 @@ It watches security advisories and tech news for these tech areas:
 | Third-party services | Providers you integrate with API keys and SDKs: SendGrid, Twilio, Mailchimp, Mailgun, Postmark, Stripe, PayPal, Razorpay, Auth0, Okta, Google sign-in, Firebase, Sentry, Algolia, Cloudinary. A breach at one of them lands here, with what to rotate. Flaws in their SDKs (`@sendgrid/mail`, `twilio/sdk`, `stripe`, `google-auth-library`…) are filed under the SDK's language |
 | Infrastructure | GitHub (incl. Enterprise Server, Actions), GitLab, Docker (Engine, Desktop), Kubernetes, containerd / runc, and hosting platforms: Vercel, Netlify, Supabase, Heroku, Cloudflare |
 | Cloud | AWS (security bulletins), plus Azure and Google Cloud mentions |
-| AI models & tools | New models and capabilities from Anthropic (Claude), OpenAI (ChatGPT / GPT), Google (Gemini, DeepMind), open-weight models (Hugging Face), and developer AI tools and workflows (Copilot, Cursor, Claude Code, MCP); security issues in AI tools get their own *AI tools vulnerability* category |
+| AI models & tools | New models and capabilities from Anthropic (Claude), OpenAI (ChatGPT / GPT), Google (Gemini, DeepMind), open-weight models (Hugging Face), and developer AI tools and workflows (Copilot, Cursor, Claude Code, MCP); security issues in AI tools (prompt injection, agent / MCP attacks, flaws in AI SDKs like `@modelcontextprotocol/sdk`, `openai`, `litellm`, `openai-php/client`) get their own *AI security* category |
 
 On top of those, news is also grouped as *exploited in the wild*, *supply chain*, *breach / malware*,
 *release / update* and *tech news*.
@@ -72,7 +75,8 @@ alerts already posted are never sent again.
 | Node.js security, php.net, Python Insider, Django, PostgreSQL, nginx.org, GitLab security releases, AWS security bulletins | Official security releases |
 | The Hacker News, BleepingComputer, GitHub Security Blog | Security news |
 | Laravel News, Node.js / React / Angular / MongoDB blogs, HN front page (300+ pts) | Dev and tech news |
-| Anthropic news (via its sitemap: no RSS), OpenAI, Google AI, Google DeepMind, Hugging Face, GitHub AI & ML, Simon Willison, Latent Space, TechCrunch AI | AI models, benchmarks and developer AI tools |
+| Anthropic news (via its sitemap: no RSS), OpenAI, Google AI, Google DeepMind, Hugging Face, GitHub AI & ML, GitHub Copilot changelog, Cursor changelog, Simon Willison, Latent Space, TechCrunch AI | AI models, benchmarks and developer AI tools |
+| Embrace The Red | AI security research: prompt injection, agent and MCP attacks |
 
 **Priority rules** (deterministic, so alerts still work if Gemini is down). They live in `src/pipeline/score.ts`:
 
@@ -87,8 +91,12 @@ alerts already posted are never sent again.
 - When CISA adds a CVE to KEV, the bot looks up the GitHub advisory for that CVE, so a package
   vulnerability is recognised as in-stack even when the KEV text never mentions npm or PHP.
 - An item matching several areas gets the first one in the table above (e.g. "PHP app on AWS" → PHP).
-- AI posts: launches, new capabilities and benchmark results are medium; other AI posts are low. Gemini
-  summarises what launched, its key capabilities, benchmark scores **only when the article states them**,
+- AI posts: launches, new capabilities, benchmark results and updates to AI coding tools (Claude Code, Cursor, Copilot,
+  Codex, MCP) are medium; other AI posts are low. AI security stories are medium, or high for prompt injection,
+  sandbox escapes, RCE or a CVE.
+- Supply chain: a takeover of a real package or maintainer account (or a self-spreading worm) in npm, Composer or
+  AI tooling is **critical**; reports of malicious / typosquatted packages, MCP servers or IDE extensions are high.
+- For AI posts, Gemini summarises what launched, its key capabilities, benchmark scores **only when the article states them**,
   and how to try it, and filters out funding / IPO / lawsuit stories.
 - Gemini writes the summaries and ends each with a concrete next step, e.g. "Upgrade laravel/framework to
   13.29.0 or later".
@@ -98,7 +106,8 @@ alerts already posted are never sent again.
   channel now (in the same request, no extra calls). It can hold one back when it needs a non-default
   config, is Windows-only, needs local or admin access, is disputed or only affects end-of-life versions.
   A held item stays **Critical** and appears in the next daily brief and on the page with the reason.
-  Guardrails: anything on CISA KEV or reported as actively exploited always alerts; if Gemini is down or
+  Guardrails: criticals in the focus areas (PHP, JS / Node, AI, supply chain) and anything on CISA KEV or
+  reported as actively exploited always alert; if Gemini is down or
   out of quota, alerts go out as usual; the AI can never create an alert, only hold one back.
 
 ## Setup
