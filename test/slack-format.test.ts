@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeMrkdwn, formatCritical } from '../src/slack/format.js';
+import { CATEGORY_LABEL, escapeMrkdwn, formatCritical } from '../src/slack/format.js';
 import type { ScoredItem } from '../src/types.js';
 
 const item = (over: Partial<ScoredItem> = {}): ScoredItem => ({
@@ -70,5 +70,11 @@ describe('formatCritical', () => {
 
   it('marks escalations', () => {
     expect(formatCritical(item(), { escalated: true }).text).toMatch(/escalated/i);
+  });
+});
+
+describe('CATEGORY_LABEL', () => {
+  it('labels GitHub/GitLab, containers and hosting platforms as Infrastructure', () => {
+    expect(CATEGORY_LABEL['vuln-devops']).toMatch(/^Infrastructure/);
   });
 });

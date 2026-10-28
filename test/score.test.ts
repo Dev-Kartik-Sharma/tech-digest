@@ -71,6 +71,13 @@ describe('scoreItem: vulnerabilities', () => {
     expect(sdk('stripe', 'pip')).toBe('critical');
   });
 
+  it('treats platform and container SDKs as major packages', () => {
+    const sdk = (name: string, ecosystem: 'npm' | 'pip') => scoreItem(vuln({ ecosystem, cvss: 9.1, packages: [{ name, ecosystem }] }))?.priority;
+    expect(sdk('@supabase/supabase-js', 'npm')).toBe('critical');
+    expect(sdk('wrangler', 'npm')).toBe('critical');
+    expect(sdk('kubernetes', 'pip')).toBe('critical');
+  });
+
   it('drops advisories for packages below the download floor', () => {
     const s = scoreItem(
       vuln({ ecosystem: 'npm', cvss: 7.5, downloads: 40, packages: [{ name: 'tiny', ecosystem: 'npm' }] }),
@@ -181,6 +188,12 @@ describe('scoreItem: news', () => {
     expect(area('MySQL')).toBe('vuln-database');
     expect(area('Nginx')).toBe('vuln-web-server');
     expect(area('GitHub Actions')).toBe('vuln-devops');
+    expect(area('Kubernetes')).toBe('vuln-devops');
+    expect(area('Docker Desktop')).toBe('vuln-devops');
+    expect(area('runc')).toBe('vuln-devops');
+    expect(area('Vercel')).toBe('vuln-devops');
+    expect(area('Supabase')).toBe('vuln-devops');
+    expect(area('Cloudflare Workers')).toBe('vuln-devops');
     expect(area('AWS Lambda')).toBe('vuln-cloud');
   });
 

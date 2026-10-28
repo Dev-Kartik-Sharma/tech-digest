@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ghsaForKev, nextLink, parseGhsa } from '../src/sources/github-advisories.js';
 import { parseKev } from '../src/sources/cisa-kev.js';
+import { NVD_CPES } from '../src/config/sources.js';
 import { parseNvd } from '../src/sources/nvd.js';
 import { parseFeed } from '../src/sources/rss.js';
 
@@ -176,5 +177,12 @@ describe('parseFeed', () => {
       <pubDate>Mon, 26 Oct 2026 10:00:00 +0000</pubDate></item></channel></rss>`;
     const [item] = await parseFeed(xml, { name: 'Hacker News', url: 'x', kind: 'tech-news' });
     expect(item?.snippet).toBe('');
+  });
+});
+
+describe('NVD_CPES', () => {
+  it('checks NVD for Kubernetes, runc, Docker Engine and Docker Desktop as infrastructure', () => {
+    const labels = NVD_CPES.filter((c) => c.stack === 'devops').map((c) => c.label);
+    expect(labels).toEqual(expect.arrayContaining(['Kubernetes', 'runc', 'Docker Engine', 'Docker Desktop']));
   });
 });

@@ -53,7 +53,7 @@ function buildPrompt(batch: ScoredItem[]): string {
   }));
   return [
     'You triage tech and security news for a team of developers working with PHP (Laravel, WordPress, Symfony), JavaScript/TypeScript (Node.js, Express, NestJS, React, Next.js, Angular: MERN and MEAN stacks, npm packages),',
-    'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite), nginx, GitHub/GitLab and cloud platforms (mainly AWS),',
+    'Python (Django, Flask, FastAPI), databases (PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite), nginx, infrastructure (GitHub/GitLab, Docker, Kubernetes, Vercel, Supabase, Cloudflare), cloud platforms (mainly AWS),',
     'third-party services they integrate through API keys and SDKs (SendGrid, Twilio, Mailchimp, Stripe, Razorpay, Auth0, Okta, Google sign-in, Firebase),',
     'and who want to keep up with AI models and AI developer tools (Claude, ChatGPT / OpenAI, Gemini, Copilot, Cursor, MCP, open-weight models).',
     `For each item return: a plain-English summary (max 2 short sentences plus a next step), the best category from [${CATEGORIES.join(', ')}],`,

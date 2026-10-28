@@ -60,6 +60,10 @@ export const NVD_CPES: { cpe: string; stack: Stack; label: string }[] = [
   { cpe: 'cpe:2.3:a:f5:nginx_plus', stack: 'web-server', label: 'NGINX Plus' },
   { cpe: 'cpe:2.3:a:gitlab:gitlab', stack: 'devops', label: 'GitLab' },
   { cpe: 'cpe:2.3:a:github:enterprise_server', stack: 'devops', label: 'GitHub Enterprise Server' },
+  { cpe: 'cpe:2.3:a:kubernetes:kubernetes', stack: 'devops', label: 'Kubernetes' },
+  { cpe: 'cpe:2.3:a:linuxfoundation:runc', stack: 'devops', label: 'runc' },
+  { cpe: 'cpe:2.3:a:mobyproject:moby', stack: 'devops', label: 'Docker Engine' },
+  { cpe: 'cpe:2.3:a:docker:desktop', stack: 'devops', label: 'Docker Desktop' },
 ];
 
 export const STACK_KEYWORDS: Record<Stack, RegExp[]> = {
@@ -116,8 +120,22 @@ export const STACK_KEYWORDS: Record<Stack, RegExp[]> = {
     /\balgolia\b/i,
     /\bcloudinary\b/i,
   ],
-  devops: [/\bgithub\b/i, /\bgitlab\b/i],
-  cloud: [/\baws\b/i, /\bamazon web services\b/i, /\bamazon (s3|ec2|rds)\b/i, /\bazure\b/i, /\bgoogle cloud\b/i, /\bgcp\b/i, /\bcloudflare\b/i],
+  // "Infrastructure": code hosting and CI, containers, and app hosting platforms
+  devops: [
+    /\bgithub\b/i,
+    /\bgitlab\b/i,
+    /\bdocker\b/i,
+    /\bkubernetes\b/i,
+    /\bk8s\b/i,
+    /\bcontainerd\b/i,
+    /\brunc\b/i,
+    /\bvercel\b/i,
+    /\bnetlify\b/i,
+    /\bsupabase\b/i,
+    /\bheroku\b/i,
+    /\bcloudflare\b/i,
+  ],
+  cloud: [/\baws\b/i, /\bamazon web services\b/i, /\bamazon (s3|ec2|rds)\b/i, /\bazure\b/i, /\bgoogle cloud\b/i, /\bgcp\b/i],
   ai: [
     /\bclaude\b/i,
     /\banthropic\b/i,
@@ -176,6 +194,8 @@ export const MAJOR_PACKAGES = new Set([
   'google/apiclient', 'google/auth', 'aws/aws-sdk-php', 'firebase/php-jwt', 'kreait/firebase-php',
   'league/oauth2-client', 'laravel/socialite', 'laravel/passport', 'sentry/sentry',
   'sendgrid', 'google-auth', 'boto3', 'pyjwt', 'authlib',
+  // containers and hosting platforms
+  '@supabase/supabase-js', 'wrangler', 'vercel', '@kubernetes/client-node', 'dockerode', 'docker', 'kubernetes', 'supabase',
 ]);
 
 export const POPULARITY = {

@@ -17,8 +17,8 @@ It watches security advisories and tech news for these tech areas:
 | Database | PostgreSQL, MySQL / MariaDB, MongoDB, Redis, SQLite, plus their client libraries (`pg`, `mysql2`, `mongoose`, `ioredis`, `predis`…) |
 | Nginx / web server | nginx, NGINX Plus |
 | Third-party services | Providers you integrate with API keys and SDKs: SendGrid, Twilio, Mailchimp, Mailgun, Postmark, Stripe, PayPal, Razorpay, Auth0, Okta, Google sign-in, Firebase, Sentry, Algolia, Cloudinary. A breach at one of them lands here, with what to rotate. Flaws in their SDKs (`@sendgrid/mail`, `twilio/sdk`, `stripe`, `google-auth-library`…) are filed under the SDK's language |
-| GitHub / GitLab | GitHub (incl. Enterprise Server, Actions), GitLab |
-| Cloud | AWS (security bulletins), plus Azure, Google Cloud, Cloudflare mentions |
+| Infrastructure | GitHub (incl. Enterprise Server, Actions), GitLab, Docker (Engine, Desktop), Kubernetes, containerd / runc, and hosting platforms: Vercel, Netlify, Supabase, Heroku, Cloudflare |
+| Cloud | AWS (security bulletins), plus Azure and Google Cloud mentions |
 | AI models & tools | New models and capabilities from Anthropic (Claude), OpenAI (ChatGPT / GPT), Google (Gemini, DeepMind), open-weight models (Hugging Face), and developer AI tools and workflows (Copilot, Cursor, Claude Code, MCP); security issues in AI tools get their own *AI tools vulnerability* category |
 
 On top of those, news is also grouped as *exploited in the wild*, *supply chain*, *breach / malware*,
@@ -67,7 +67,7 @@ alerts already posted are never sent again.
 | Source | What it gives |
 |---|---|
 | GitHub Advisory DB (npm, composer, pip) | Package vulnerabilities, with CVSS and affected/fixed versions |
-| NVD (PHP, Node.js, Python, PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, nginx, GitLab, GitHub Enterprise Server) | CVEs in the products themselves |
+| NVD (PHP, Node.js, Python, PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, nginx, GitLab, GitHub Enterprise Server, Kubernetes, runc, Docker Engine, Docker Desktop) | CVEs in the products themselves |
 | CISA KEV | Vulnerabilities being actively exploited |
 | Node.js security, php.net, Python Insider, Django, PostgreSQL, nginx.org, GitLab security releases, AWS security bulletins | Official security releases |
 | The Hacker News, BleepingComputer, GitHub Security Blog | Security news |
@@ -103,7 +103,7 @@ alerts already posted are never sent again.
 |---|---|---|
 | Slack webhook URL | api.slack.com/apps → Create app → Incoming Webhooks → add to your channel | yes |
 | Gemini API key | aistudio.google.com → Get API key | recommended |
-| NVD API key | nvd.nist.gov/developers/request-an-api-key | recommended: without it, NVD's rate limit adds ~90 s to each run (15 product queries) |
+| NVD API key | nvd.nist.gov/developers/request-an-api-key | recommended: without it, NVD's rate limit adds ~2 min to each run (19 product queries) |
 
 There's no GitHub token to create: the workflow's built-in `GITHUB_TOKEN` is used for the Advisory API.
 For local runs you can set `GITHUB_TOKEN` in `.env` to raise the API rate limit.

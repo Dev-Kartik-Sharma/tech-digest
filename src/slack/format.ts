@@ -17,7 +17,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   'vuln-database': 'Database vulnerability',
   'vuln-web-server': 'Nginx / web server vulnerability',
   'vuln-services': 'Third-party services (APIs & SDKs)',
-  'vuln-devops': 'GitHub / GitLab vulnerability',
+  'vuln-devops': 'Infrastructure vulnerability',
   'vuln-cloud': 'Cloud (AWS & co.) vulnerability',
   'vuln-ai': 'AI tools vulnerability',
   'exploited-in-wild': 'Exploited in the wild',
