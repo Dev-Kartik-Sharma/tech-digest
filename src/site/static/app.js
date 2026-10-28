@@ -94,11 +94,21 @@ const cvssClass = (s) => (s >= 9 ? 'cvss-critical' : s >= 7 ? 'cvss-high' : s >=
 
 // ---------- filtering ----------
 
-function matches(item) {
+function matches(item, byLabel) {
   if (state.priorities.size && !state.priorities.has(item.priority)) return false;
   if (state.categories.size && !state.categories.has(item.category)) return false;
   if (!state.q) return true;
-  const hay = [item.title, item.summary, item.source, item.fix, ...(item.ids ?? []), ...(item.affected ?? []).map((a) => a.name)]
+  // category and priority names too, so "database" or "critical node" work
+  const hay = [
+    item.title,
+    item.summary,
+    item.source,
+    item.fix,
+    byLabel.get(item.category),
+    PRIORITY_LABEL[item.priority],
+    ...(item.ids ?? []),
+    ...(item.affected ?? []).map((a) => a.name),
+  ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -217,8 +227,8 @@ function card(item) {
 }
 
 function renderList(items) {
-  const shown = items.filter(matches);
   const byLabel = labels();
+  const shown = items.filter((i) => matches(i, byLabel));
   const order = (state.index.categories ?? []).map((c) => c.id);
   const sections = [];
   for (const p of PRIORITIES) {
