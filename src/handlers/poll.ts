@@ -52,7 +52,7 @@ export async function runPoll(deps: PollDeps) {
   const enriched = deps.generate && toEnrich.length ? await enrichWithGemini(toEnrich, deps.generate) : toEnrich;
 
   const criticals = enriched
-    .filter((i) => i.priority === 'critical')
+    .filter((i) => i.priority === 'critical' && !LIMITS.briefOnlyCategories.includes(i.category))
     .sort((a, b) => Number(escalatedIds.has(b.id)) - Number(escalatedIds.has(a.id)) || (b.cvss ?? 0) - (a.cvss ?? 0));
   const toAlert = criticals.slice(0, LIMITS.maxCriticalPerRun);
   const alertIds = new Set(toAlert.map((i) => i.id));
@@ -80,7 +80,7 @@ export async function runPoll(deps: PollDeps) {
 
   // Not handled this run, so left out of state and retried next poll: failed alerts, and
   // escalations beyond the per-run cap (they keep their old seen record).
-  const retryLater = (i: ScoredItem) => failed.has(i.id) || (escalatedIds.has(i.id) && !alertIds.has(i.id));
+  const retryLater = (i: ScoredItem) => failed.has(i.id) || (criticals.includes(i) && escalatedIds.has(i.id) && !alertIds.has(i.id));
 
   // Everything goes in the day's record for the brief page; alerted items are marked so the Slack
   // brief doesn't repeat them. Escalations were in an earlier day's record already.

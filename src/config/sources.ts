@@ -158,6 +158,8 @@ export const LIMITS = {
   nvdMaxAgeDays: 30,
   /** Extra critical alerts beyond this go to the digest (protects the first run). */
   maxCriticalPerRun: 5,
+  /** Criticals in these categories skip the instant alert and only appear in the daily brief. */
+  briefOnlyCategories: ['vuln-python'] as readonly string[],
   geminiBatchSize: 30,
   geminiMaxCallsPerRun: 3,
   seenTtlDays: 45,

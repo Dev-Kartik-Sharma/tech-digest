@@ -221,6 +221,38 @@ describe('runPoll: review fixes', () => {
   });
 });
 
+describe('runPoll: Python criticals', () => {
+  const pyRce = (over: Partial<Item> = {}) => phpRce(1, { id: 'CVE-2026-3001', aliases: ['CVE-2026-3001'], title: 'Python remote code execution', stackHint: 'python', ...over });
+
+  it('keeps a Python critical out of instant alerts and puts it in the day\'s brief as critical', async () => {
+    const { d, posts, store } = deps([pyRce(), phpRce(2)]);
+    const stats = await runPoll(d);
+    expect(posts).toHaveLength(1);
+    expect(posts[0]?.text).toMatch(/PHP remote code execution #2/);
+    const py = (await store.listPending()).find((e) => e.item.id === 'CVE-2026-3001')?.item;
+    expect(py).toMatchObject({ priority: 'critical', category: 'vuln-python' });
+    expect(py?.alertedAt).toBeUndefined();
+    expect(store.seen.get('CVE-2026-3001')).toBe('critical');
+    expect(stats.alerted).toBe(1);
+
+    await runPoll(d);
+    expect(posts).toHaveLength(1);
+  });
+
+  it('does not alert a Python item escalated to critical, and records it for the brief once', async () => {
+    const high = pyRce({ title: 'Python path traversal', cvss: 7.5 });
+    const { d, posts, store } = deps([high]);
+    await runPoll(d);
+    expect(store.seen.get('CVE-2026-3001')).toBe('high');
+    await store.deletePending((await store.listPending()).map((e) => e.key));
+    await runPoll({ ...d, fetchAll: async () => [{ ...high, kev: true }] });
+    await runPoll({ ...d, fetchAll: async () => [{ ...high, kev: true }] });
+    expect(posts).toHaveLength(0);
+    expect(store.seen.get('CVE-2026-3001')).toBe('critical');
+    expect((await store.listPending()).map((e) => e.item.priority)).toEqual(['critical']);
+  });
+});
+
 describe('runDigest', () => {
   const SITE = 'https://example.github.io/repo/';
 

@@ -26,6 +26,8 @@ On top of those, news is also grouped as *exploited in the wild*, *supply chain*
 **In Slack** (kept short for busy developers):
 - **Critical alerts, instantly:** e.g. a PHP or Next.js remote code execution bug, or anything in your
   stack on CISA's actively-exploited list, with affected versions and the version to upgrade to.
+  Python criticals are the exception: they skip the instant alert and only appear in the daily brief
+  (`briefOnlyCategories` in `src/config/sources.ts`).
 - **One daily brief** on the first run after 10:00 IST (usually by ~10:15). It has the day's counts, the
   top 5 High items (one line each, spread across tech areas) and an **Open today's brief** button.
   Criticals that were already alerted are only counted. Link previews are turned off.
